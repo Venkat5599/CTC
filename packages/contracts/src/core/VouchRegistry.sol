@@ -110,13 +110,15 @@ contract VouchRegistry is
         if (!verified) revert VouchErrors.ProofVerificationFailed(claim.txHash);
 
         // 5 & 6. S1 (receipt status) and S2 (emitter pinning), plus subject and
-        //        value extraction from the PROVEN payload.
-        (uint32 logIndex, address subject, uint256 value, bytes32 payloadHash) =
-            SourceValidator.validateAndExtract(claim.encodedTransaction, src, claim.txHash);
+        //        value extraction from the PROVEN payload. The claim names which
+        //        log it is about; the validator asserts that log is the one the
+        //        registry pinned, so a wrong index reverts rather than lies.
+        (address subject, uint256 value, bytes32 payloadHash) =
+            SourceValidator.validateAndExtract(claim.encodedTransaction, src, claim.logIndex, claim.txHash);
 
         // 7. S3. Replay guard, keyed on the log and its fact type.
         bytes32 factId =
-            _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, logIndex);
+            _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, claim.logIndex);
         _consume(factId);
 
         // 8. Store.
@@ -125,7 +127,7 @@ contract VouchRegistry is
             sourceChain: claim.chainKey,
             blockNumber: claim.blockNumber,
             txHash: claim.txHash,
-            logIndex: logIndex,
+            logIndex: claim.logIndex,
             subject: subject,
             emitter: src.emitter,
             factType: claim.factType,

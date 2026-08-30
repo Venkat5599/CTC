@@ -19,11 +19,16 @@ abstract contract ReplayGuard {
         return _consumed[factId];
     }
 
-    /// @dev factType is part of the key on purpose. `getLogsByEventSignature`
-    ///      returns a FILTERED array, so index 0 under one factType and index 0
-    ///      under another can be different logs in the same transaction. Without
-    ///      factType in the key those two legitimate facts would collide and the
-    ///      second would be rejected as a replay.
+    /// @dev factType is part of the key on purpose. The tuple
+    ///      (chainKey, blockNumber, txHash, logIndex) already names exactly one
+    ///      log on the source chain, so it would be sufficient to stop replay.
+    ///      Including factType keeps the door open for one log to satisfy two
+    ///      registered fact types at once — a Repay that counts as both
+    ///      AAVE_REPAYMENT and some future broader DEFI_ACTIVITY — without the
+    ///      second registration being silently rejected as a replay of the
+    ///      first. Two DIFFERENT meanings drawn from one proven event is a
+    ///      legitimate registry configuration; the same meaning drawn twice is
+    ///      not, and that is what this guard still blocks.
     function _factId(
         uint64 chainKey,
         uint64 blockNumber,

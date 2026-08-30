@@ -17,6 +17,8 @@ library VouchErrors {
     error TransactionReverted(bytes32 txHash);
     error UnsupportedTransactionType(uint8 txType);
     error NoMatchingLogs(bytes32 topic0);
+    error LogIndexOutOfRange(uint32 logIndex, uint256 logCount);
+    error SubjectTopicMissing(uint8 subjectTopicIndex, uint256 topicCount);
 
     // --- proof bounds ---
     error ContinuityProofTooLong(uint256 length, uint256 maxLength);

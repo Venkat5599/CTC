@@ -37,11 +37,23 @@ library VouchTypes {
     }
 
     /// @notice One claim within a batch submission.
+    /// @dev `logIndex` is the RECEIPT-WIDE index of the log being claimed, and the
+    ///      submitter names it explicitly. It is not a trust assumption: the
+    ///      validator asserts that the log at that exact position carries the
+    ///      registered topic0 and was emitted by the pinned contract, so naming
+    ///      the wrong index reverts rather than mints a false fact.
+    ///
+    ///      Making the submitter name the log is what allows a single transaction
+    ///      to yield SEVERAL facts. A transaction that repays three positions
+    ///      emits three qualifying logs, and each one is a separate claim at a
+    ///      separate index. Deriving the index by scanning for the first match
+    ///      instead would make logs two and three permanently unclaimable.
     struct FactClaim {
         uint64 chainKey;
         uint64 blockNumber;
         bytes32 txHash;
         bytes32 factType;
+        uint32 logIndex;
         bytes encodedTransaction;
         bytes32 merkleRoot;
         INativeQueryVerifier.MerkleProofEntry[] siblings;

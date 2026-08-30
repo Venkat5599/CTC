@@ -27,20 +27,32 @@ import {VouchErrors} from "../core/VouchErrors.sol";
 ///      themselves a history. The proof system is not compromised; the
 ///      consuming contract simply failed to establish semantics. Pinning the
 ///      emitter address is the only defence.
+///
+///      A NOTE ON THE LOG INDEX. An earlier version of this file located its
+///      log with `EvmV1Decoder.getLogsByEventSignature` and then used the
+///      position within that FILTERED array as the log index. That is not a log
+///      index — the filter has already discarded the original positions, so the
+///      number names nothing on the source chain, and since the scan stopped at
+///      the first match, a transaction emitting several qualifying logs could
+///      only ever produce one fact. Both problems are the same problem, and both
+///      disappear by not filtering: the caller names the receipt-wide index and
+///      this function verifies the log sitting there is the one the registry
+///      pinned. Cheaper, correct, and multi-log capable.
 library SourceValidator {
-    /// @notice Extract and validate the log matching a registered source.
+    /// @notice Validate the named log against a registered source and extract the fact.
     /// @param encodedTransaction The verified transaction bytes from the precompile.
     /// @param src The registered source this claim must match.
+    /// @param logIndex Receipt-wide index of the log being claimed.
     /// @param txHash Source transaction hash, for error reporting.
-    /// @return logIndex Index of the matched log within the receipt.
     /// @return subject The address the fact is about.
-    /// @return value The primary numeric payload (first 32 bytes of log data).
+    /// @return value The primary numeric payload (first word of log data).
     /// @return payloadHash Commitment to the full decoded log data.
     function validateAndExtract(
         bytes memory encodedTransaction,
         VouchTypes.RegisteredSource memory src,
+        uint32 logIndex,
         bytes32 txHash
-    ) internal pure returns (uint32 logIndex, address subject, uint256 value, bytes32 payloadHash) {
+    ) internal pure returns (address subject, uint256 value, bytes32 payloadHash) {
         // --- transaction shape ---
         uint8 txType = EvmV1Decoder.getTransactionType(encodedTransaction);
         if (!EvmV1Decoder.isValidTransactionType(txType)) {
@@ -52,42 +64,41 @@ library SourceValidator {
         // --- S1: the precompile proved inclusion, NOT success ---
         if (receipt.receiptStatus != 1) revert VouchErrors.TransactionReverted(txHash);
 
-        // --- locate candidate logs by event signature ---
-        EvmV1Decoder.LogEntry[] memory logs = EvmV1Decoder.getLogsByEventSignature(receipt, src.topic0);
-        if (logs.length == 0) revert VouchErrors.NoMatchingLogs(src.topic0);
+        // --- the claimed log must exist ---
+        if (logIndex >= receipt.receiptLogs.length) {
+            revert VouchErrors.LogIndexOutOfRange(logIndex, receipt.receiptLogs.length);
+        }
+        EvmV1Decoder.LogEntry memory entry = receipt.receiptLogs[logIndex];
+
+        // --- the log must be the registered event ---
+        if (entry.topics.length == 0 || entry.topics[0] != src.topic0) {
+            revert VouchErrors.TopicMismatch(src.topic0, entry.topics.length == 0 ? bytes32(0) : entry.topics[0]);
+        }
 
         // --- S2: the signature alone proves nothing. Pin the emitter. ---
-        // Walk candidates and take the first whose emitter matches the pinned
-        // source contract. A spoofed log with an identical topic0 is skipped
-        // here, and if no log survives the filter the claim reverts.
-        bool found;
-        EvmV1Decoder.LogEntry memory log;
-        for (uint256 i = 0; i < logs.length; ++i) {
-            if (logs[i].address_ == src.emitter) {
-                log = logs[i];
-                logIndex = uint32(i);
-                found = true;
-                break;
-            }
+        // A spoofed log carrying an identical topic0 from an attacker-deployed
+        // contract dies here, and it dies whichever index it was placed at.
+        if (entry.address_ != src.emitter) {
+            revert VouchErrors.EmitterMismatch(src.emitter, entry.address_);
         }
-        if (!found) revert VouchErrors.EmitterMismatch(src.emitter, logs[0].address_);
 
         // --- subject comes from the PROVEN payload, never from calldata ---
-        if (log.topics.length <= src.subjectTopicIndex) {
-            revert VouchErrors.NoMatchingLogs(src.topic0);
+        if (entry.topics.length <= src.subjectTopicIndex) {
+            revert VouchErrors.SubjectTopicMissing(src.subjectTopicIndex, entry.topics.length);
         }
-        subject = address(uint160(uint256(log.topics[src.subjectTopicIndex])));
+        subject = address(uint160(uint256(entry.topics[src.subjectTopicIndex])));
 
         // --- primary numeric value: first word of log data ---
-        if (log.data.length >= 32) {
-            bytes memory data = log.data;
+        if (entry.data.length >= 32) {
+            bytes memory data = entry.data;
             uint256 v;
+            // solhint-disable-next-line no-inline-assembly
             assembly {
                 v := mload(add(data, 32))
             }
             value = v;
         }
 
-        payloadHash = keccak256(abi.encodePacked(log.data));
+        payloadHash = keccak256(entry.data);
     }
 }
