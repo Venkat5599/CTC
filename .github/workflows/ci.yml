@@ -97,6 +97,11 @@ jobs:
           - services/relayer
           - services/indexer
           - services/worker
+          - packages/ui
+          - apps/web
+          - apps/explorer
+          - apps/docs
+          - apps/demo-credit
     steps:
       - uses: actions/checkout@v4
 
