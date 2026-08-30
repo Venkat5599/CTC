@@ -24,12 +24,12 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      # OpenZeppelin and @gluwa/usc-contracts are resolved from node_modules,
-      # which foundry.toml lists as a lib path.
+      # OpenZeppelin and @gluwa/usc-contracts resolve from node_modules, which
+      # foundry.toml lists as a lib path.
       - name: Install Solidity dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       - name: Check formatting
         run: forge fmt --check
@@ -58,15 +58,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install Solidity dependencies
-        run: npm ci
+        run: npm install --no-audit --no-fund
 
       # S1, S2 and S3 are the three failure modes the submission's security
       # claim rests on. Running them as their own job means a regression in any
       # one of them is legible in the checks list rather than buried in a
-      # 47-line test log.
+      # 52-line test log.
       - name: S1 - inclusion is not success
         run: forge test --match-test "test_S1_" -vv
 
@@ -82,32 +82,43 @@ jobs:
       - name: Submission stays permissionless
         run: forge test --match-test "test_anySenderCanSubmit" -vv
 
-  services:
-    name: services
+  workspaces:
+    name: ${{ matrix.workspace }}
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        service: [relayer, indexer]
+        workspace:
+          - packages/config
+          - packages/schemas
+          - packages/proof-engine
+          - packages/attestcoin
+          - services/relayer
+          - services/indexer
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
-      - name: Install
-        working-directory: services/${{ matrix.service }}
+      # Installed from the ROOT, not from the workspace directory. These
+      # packages depend on each other through npm workspace links, and a
+      # per-directory install cannot resolve "@vouch/proof-engine": "*".
+      - name: Install workspace
         run: npm install --no-audit --no-fund
 
-      - name: Typecheck
-        working-directory: services/${{ matrix.service }}
-        run: npm run typecheck
+      # The Prisma client is generated code. Nothing that imports it typechecks
+      # until it exists, so this runs before, not after.
+      - name: Generate Prisma client
+        if: matrix.workspace == 'services/indexer'
+        run: npm --prefix services/indexer run db:generate
 
-      # The indexer has no test script yet; its behaviour is network-bound and
-      # is covered by the packer and proof-request suites downstream of it.
+      - name: Typecheck
+        run: npm --prefix ${{ matrix.workspace }} run typecheck
+
       - name: Test
-        working-directory: services/${{ matrix.service }}
-        run: npm run test --if-present
+        run: npm --prefix ${{ matrix.workspace }} run test --if-present
 
   secrets:
     name: no committed secrets
