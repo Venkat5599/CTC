@@ -28,19 +28,16 @@ library EventSignatures {
     /// @dev keccak256("Repay(address,address,address,uint256,bool)")
     ///      Aave V3 Pool. topics: [sig, reserve, user, repayer]; data: (amount, useATokens)
     ///      subjectTopicIndex = 2 (user)
-    bytes32 internal constant AAVE_REPAY =
-        keccak256("Repay(address,address,address,uint256,bool)");
+    bytes32 internal constant AAVE_REPAY = keccak256("Repay(address,address,address,uint256,bool)");
 
     /// @dev keccak256("Supply(address,address,address,uint256,uint16)")
     ///      Aave V3 Pool. topics: [sig, reserve, onBehalfOf, referralCode]; data: (user, amount)
     ///      subjectTopicIndex = 2 (onBehalfOf)
-    bytes32 internal constant AAVE_SUPPLY =
-        keccak256("Supply(address,address,address,uint256,uint16)");
+    bytes32 internal constant AAVE_SUPPLY = keccak256("Supply(address,address,address,uint256,uint16)");
 
     /// @dev keccak256("VoteCast(address,uint256,uint8,uint256,string)")
     ///      OpenZeppelin Governor. Note: voter is NOT indexed in the standard
     ///      Governor, so a Governor whose voter is indexed must be chosen, or
     ///      the subject must be decoded from data. Verify before registering.
-    bytes32 internal constant VOTE_CAST =
-        keccak256("VoteCast(address,uint256,uint8,uint256,string)");
+    bytes32 internal constant VOTE_CAST = keccak256("VoteCast(address,uint256,uint8,uint256,string)");
 }

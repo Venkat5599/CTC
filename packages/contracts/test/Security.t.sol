@@ -31,12 +31,9 @@ contract SecurityTest is VouchTestBase {
     ///      and it does so silently — nothing reverts, the precompile is happy.
     function test_S1_revertedTransactionIsRejected() public {
         bytes memory encoded = ReceiptBuilder.reverted(
-            ReceiptBuilder.one(
-                ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 5_000e6)
-            )
+            ReceiptBuilder.one(ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 5_000e6))
         );
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_000, keccak256("s1"), 0, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_000, keccak256("s1"), 0, encoded);
 
         vm.expectRevert(abi.encodeWithSelector(VouchErrors.TransactionReverted.selector, keccak256("s1")));
         _submit(claim);
@@ -47,12 +44,9 @@ contract SecurityTest is VouchTestBase {
     /// @notice The mock genuinely accepted the proof — S1 is Vouch's rejection, not the precompile's.
     function test_S1_precompileAcceptedTheProofAnyway() public {
         bytes memory encoded = ReceiptBuilder.reverted(
-            ReceiptBuilder.one(
-                ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 1e6)
-            )
+            ReceiptBuilder.one(ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 1e6))
         );
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_001, keccak256("s1b"), 0, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_001, keccak256("s1b"), 0, encoded);
 
         assertTrue(verifier.shouldVerify(), "precompile mock is in accepting mode");
         vm.expectRevert();
@@ -71,16 +65,11 @@ contract SecurityTest is VouchTestBase {
     ///      repayment from a self-issued one.
     function test_S2_spoofedEmitterIsRejected() public {
         bytes memory encoded = ReceiptBuilder.successful(
-            ReceiptBuilder.one(
-                ReceiptBuilder.repayLog(IMPOSTOR, EventSignatures.AAVE_REPAY, USDC, ALICE, 1_000_000e6)
-            )
+            ReceiptBuilder.one(ReceiptBuilder.repayLog(IMPOSTOR, EventSignatures.AAVE_REPAY, USDC, ALICE, 1_000_000e6))
         );
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_010, keccak256("s2"), 0, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_010, keccak256("s2"), 0, encoded);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, AAVE_POOL, IMPOSTOR)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, AAVE_POOL, IMPOSTOR));
         _submit(claim);
 
         assertFalse(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "self-issued history must not count");
@@ -97,12 +86,9 @@ contract SecurityTest is VouchTestBase {
         );
         bytes memory encoded = ReceiptBuilder.successful(logs);
 
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_011, keccak256("s2b"), 1, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_011, keccak256("s2b"), 1, encoded);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, AAVE_POOL, IMPOSTOR)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, AAVE_POOL, IMPOSTOR));
         _submit(claim);
     }
 
@@ -117,8 +103,7 @@ contract SecurityTest is VouchTestBase {
         bytes memory encoded = ReceiptBuilder.successful(
             ReceiptBuilder.one(ReceiptBuilder.log(AAVE_POOL, topics, abi.encode(uint256(1e6), false)))
         );
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_012, keccak256("s2c"), 0, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_012, keccak256("s2c"), 0, encoded);
 
         vm.expectRevert(
             abi.encodeWithSelector(
@@ -189,12 +174,9 @@ contract SecurityTest is VouchTestBase {
     /// @notice Naming a log index past the end of the receipt reverts.
     function test_logIndexOutOfRangeIsRejected() public {
         bytes memory encoded = ReceiptBuilder.successful(
-            ReceiptBuilder.one(
-                ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 1e6)
-            )
+            ReceiptBuilder.one(ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, 1e6))
         );
-        VouchTypes.FactClaim memory claim =
-            _claim(FactTypes.AAVE_REPAYMENT, 20_000_031, keccak256("oob"), 7, encoded);
+        VouchTypes.FactClaim memory claim = _claim(FactTypes.AAVE_REPAYMENT, 20_000_031, keccak256("oob"), 7, encoded);
 
         vm.expectRevert(abi.encodeWithSelector(VouchErrors.LogIndexOutOfRange.selector, uint32(7), uint256(1)));
         _submit(claim);
@@ -211,9 +193,7 @@ contract SecurityTest is VouchTestBase {
         VouchTypes.FactClaim memory claim = _repayClaim(ALICE, 1e6, 20_000_040, keccak256("ck"));
         claim.chainKey = CHAIN_SEPOLIA;
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.ChainKeyMismatch.selector, CHAIN_ETHEREUM, CHAIN_SEPOLIA)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.ChainKeyMismatch.selector, CHAIN_ETHEREUM, CHAIN_SEPOLIA));
         _submit(claim);
     }
 
@@ -278,17 +258,14 @@ contract SecurityTest is VouchTestBase {
         verifier.setShouldVerify(false);
         VouchTypes.FactClaim memory claim = _repayClaim(ALICE, 1e6, 20_000_080, keccak256("rej"));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.ProofVerificationFailed.selector, keccak256("rej"))
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.ProofVerificationFailed.selector, keccak256("rej")));
         _submit(claim);
     }
 
     /// @notice An unsupported transaction type is rejected before decoding.
     function test_unsupportedTransactionTypeIsRejected() public {
-        VouchTypes.FactClaim memory claim = _claim(
-            FactTypes.AAVE_REPAYMENT, 20_000_090, keccak256("badtype"), 0, ReceiptBuilder.withInvalidType()
-        );
+        VouchTypes.FactClaim memory claim =
+            _claim(FactTypes.AAVE_REPAYMENT, 20_000_090, keccak256("badtype"), 0, ReceiptBuilder.withInvalidType());
 
         vm.expectRevert(abi.encodeWithSelector(VouchErrors.UnsupportedTransactionType.selector, uint8(9)));
         _submit(claim);
@@ -312,9 +289,7 @@ contract SecurityTest is VouchTestBase {
 
         VouchTypes.FactClaim memory claim = _repayClaim(ALICE, 1e6, 20_000_110, keccak256("disabled"));
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.SourceDisabled.selector, FactTypes.AAVE_REPAYMENT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.SourceDisabled.selector, FactTypes.AAVE_REPAYMENT));
         _submit(claim);
     }
 
@@ -336,7 +311,9 @@ contract SecurityTest is VouchTestBase {
         uint256 verified = registry.submitBatch(_continuity(), _batch(claim));
 
         assertEq(verified, 1, "anyone may submit a valid proof");
-        assertTrue(registry.hasProof(BOB, FactTypes.AAVE_REPAYMENT), "standing belongs to the subject, not the submitter");
+        assertTrue(
+            registry.hasProof(BOB, FactTypes.AAVE_REPAYMENT), "standing belongs to the subject, not the submitter"
+        );
     }
 
     /// @notice The subject is read from the proven log, never from the submitter.

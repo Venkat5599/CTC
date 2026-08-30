@@ -34,8 +34,7 @@ abstract contract AttestcoinVerifier {
             INativeQueryVerifier.MerkleProof({root: merkleRoot, siblings: siblings});
 
         INativeQueryVerifier.ContinuityProof memory continuityProof = INativeQueryVerifier.ContinuityProof({
-            lowerEndpointDigest: continuity.lowerEndpointDigest,
-            roots: continuity.roots
+            lowerEndpointDigest: continuity.lowerEndpointDigest, roots: continuity.roots
         });
 
         return VERIFIER.verifyAndEmit(chainKey, blockNumber, encodedTransaction, merkleProof, continuityProof);

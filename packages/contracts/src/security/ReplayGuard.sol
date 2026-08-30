@@ -29,13 +29,11 @@ abstract contract ReplayGuard {
     ///      first. Two DIFFERENT meanings drawn from one proven event is a
     ///      legitimate registry configuration; the same meaning drawn twice is
     ///      not, and that is what this guard still blocks.
-    function _factId(
-        uint64 chainKey,
-        uint64 blockNumber,
-        bytes32 txHash,
-        bytes32 factType,
-        uint32 logIndex
-    ) internal pure returns (bytes32) {
+    function _factId(uint64 chainKey, uint64 blockNumber, bytes32 txHash, bytes32 factType, uint32 logIndex)
+        internal
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encodePacked(chainKey, blockNumber, txHash, factType, logIndex));
     }
 

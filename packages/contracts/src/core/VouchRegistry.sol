@@ -31,13 +31,7 @@ import {SourceValidator} from "../verification/SourceValidator.sol";
 ///      VERIFY-ONCE. A fact is verified once and stored canonically. Every later
 ///      read, by this protocol or any other Creditcoin application, is an SLOAD.
 ///      The first consumer pays; every subsequent consumer reads free.
-contract VouchRegistry is
-    IVouchRegistry,
-    ReplayGuard,
-    SourceRegistry,
-    ProofValidator,
-    AttestcoinVerifier
-{
+contract VouchRegistry is IVouchRegistry, ReplayGuard, SourceRegistry, ProofValidator, AttestcoinVerifier {
     // factId => fact
     mapping(bytes32 => VouchTypes.VerifiedFact) private _facts;
 
@@ -63,10 +57,11 @@ contract VouchRegistry is
     /// @param continuity Continuity proof shared by every claim in the batch.
     /// @param claims Up to MAX_BATCH_SIZE claims within a 1000-block window.
     /// @return verifiedCount Number of facts newly written.
-    function submitBatch(
-        VouchTypes.BatchContinuity calldata continuity,
-        VouchTypes.FactClaim[] calldata claims
-    ) external override returns (uint256 verifiedCount) {
+    function submitBatch(VouchTypes.BatchContinuity calldata continuity, VouchTypes.FactClaim[] calldata claims)
+        external
+        override
+        returns (uint256 verifiedCount)
+    {
         _validateBatchSize(claims.length);
 
         for (uint256 i = 0; i < claims.length; ++i) {
@@ -78,10 +73,10 @@ contract VouchRegistry is
         }
     }
 
-    function _processClaim(
-        VouchTypes.BatchContinuity calldata continuity,
-        VouchTypes.FactClaim calldata claim
-    ) internal returns (bool) {
+    function _processClaim(VouchTypes.BatchContinuity calldata continuity, VouchTypes.FactClaim calldata claim)
+        internal
+        returns (bool)
+    {
         // 1. Source must be registered and enabled.
         VouchTypes.RegisteredSource memory src = _requireEnabledSource(claim.factType);
 
@@ -100,12 +95,7 @@ contract VouchRegistry is
         //    the confirmed source chain. Proves NOTHING about success or
         //    authorship, which is what steps 5 and 6 are for.
         bool verified = _verifyInclusion(
-            claim.chainKey,
-            claim.blockNumber,
-            claim.encodedTransaction,
-            claim.merkleRoot,
-            claim.siblings,
-            continuity
+            claim.chainKey, claim.blockNumber, claim.encodedTransaction, claim.merkleRoot, claim.siblings, continuity
         );
         if (!verified) revert VouchErrors.ProofVerificationFailed(claim.txHash);
 
@@ -117,8 +107,7 @@ contract VouchRegistry is
             SourceValidator.validateAndExtract(claim.encodedTransaction, src, claim.logIndex, claim.txHash);
 
         // 7. S3. Replay guard, keyed on the log and its fact type.
-        bytes32 factId =
-            _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, claim.logIndex);
+        bytes32 factId = _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, claim.logIndex);
         _consume(factId);
 
         // 8. Store.
@@ -182,12 +171,7 @@ contract VouchRegistry is
         return _facts[factId];
     }
 
-    function isVerified(bytes32 factId)
-        public
-        view
-        override(IVouchRegistry, ReplayGuard)
-        returns (bool)
-    {
+    function isVerified(bytes32 factId) public view override(IVouchRegistry, ReplayGuard) returns (bool) {
         return ReplayGuard.isVerified(factId);
     }
 

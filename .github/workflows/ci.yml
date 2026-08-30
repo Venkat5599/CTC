@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+
+env:
+  FOUNDRY_PROFILE: default
+
+jobs:
+  contracts:
+    name: contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # OpenZeppelin and @gluwa/usc-contracts are resolved from node_modules,
+      # which foundry.toml lists as a lib path.
+      - name: Install Solidity dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build --sizes
+
+      - name: Test
+        run: forge test -vv
+
+      - name: Gas report
+        run: forge test --gas-report --match-path "packages/contracts/test/Gas.t.sol"
+
+  security-invariants:
+    name: security invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Solidity dependencies
+        run: npm ci
+
+      # S1, S2 and S3 are the three failure modes the submission's security
+      # claim rests on. Running them as their own job means a regression in any
+      # one of them is legible in the checks list rather than buried in a
+      # 47-line test log.
+      - name: S1 - inclusion is not success
+        run: forge test --match-test "test_S1_" -vv
+
+      - name: S2 - emitter pinning
+        run: forge test --match-test "test_S2_" -vv
+
+      - name: S3 - replay protection
+        run: forge test --match-test "test_S3_" -vv
+
+      # Anti-criterion, enforced mechanically: submitBatch must stay
+      # permissionless. If someone adds an allowlist or an owner check to the
+      # submission path, this fails before review does.
+      - name: Submission stays permissionless
+        run: forge test --match-test "test_anySenderCanSubmit" -vv
+
+  secrets:
+    name: no committed secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan for committed keys
+        run: |
+          if git grep -nIE '(PRIVATE_KEY|MNEMONIC)[[:space:]]*=[[:space:]]*[^[:space:]]+' -- ':!*.example' ':!.github/*'; then
+            echo "::error::A private key or mnemonic appears to be committed."
+            exit 1
+          fi
+          echo "No committed keys found."

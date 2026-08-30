@@ -212,9 +212,7 @@ contract RegistryTest is VouchTestBase {
 
     function _proveRepayments(address user, uint256 count, uint64 startBlock) internal {
         for (uint256 i; i < count; ++i) {
-            _submit(
-                _repayClaim(user, 1e6, startBlock + uint64(i), keccak256(abi.encodePacked(startBlock, i)))
-            );
+            _submit(_repayClaim(user, 1e6, startBlock + uint64(i), keccak256(abi.encodePacked(startBlock, i))));
         }
     }
 

@@ -155,9 +155,7 @@ contract ConsumersTest is VouchTestBase {
 
     function test_gateRejectsUnprovenAddress() public {
         vm.prank(ALICE);
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchAccess.NotAdmitted.selector, ALICE, FactTypes.AAVE_REPAYMENT)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchAccess.NotAdmitted.selector, ALICE, FactTypes.AAVE_REPAYMENT));
         accessGate.claim();
     }
 
@@ -205,17 +203,13 @@ contract ConsumersTest is VouchTestBase {
 
     function _proveRepayments(address user, uint256 count, uint64 startBlock) internal {
         for (uint256 i; i < count; ++i) {
-            _submit(
-                _repayClaim(user, 1e6, startBlock + uint64(i), keccak256(abi.encodePacked(startBlock, i)))
-            );
+            _submit(_repayClaim(user, 1e6, startBlock + uint64(i), keccak256(abi.encodePacked(startBlock, i))));
         }
     }
 
     function _proveSupplies(address user, uint256 count, uint64 startBlock) internal {
         for (uint256 i; i < count; ++i) {
-            _submitSupply(
-                user, 1_000e6, startBlock + uint64(i), keccak256(abi.encodePacked("lp", startBlock, i))
-            );
+            _submitSupply(user, 1_000e6, startBlock + uint64(i), keccak256(abi.encodePacked("lp", startBlock, i)));
         }
     }
 

@@ -77,11 +77,7 @@ library ReceiptBuilder {
     // -----------------------------------------------------------------------
 
     /// @notice One log with an arbitrary topic list.
-    function log(address emitter, bytes32[] memory topics, bytes memory data)
-        internal
-        pure
-        returns (Log memory)
-    {
+    function log(address emitter, bytes32[] memory topics, bytes memory data) internal pure returns (Log memory) {
         return Log({emitter: emitter, topics: topics, data: data});
     }
 
@@ -133,15 +129,7 @@ library ReceiptBuilder {
 
     function _commonChunk() private pure returns (bytes memory) {
         // (nonce, gasLimit, from, toIsNull, to, value, data)
-        return abi.encode(
-            uint64(1),
-            uint64(21_000),
-            address(0xA11CE),
-            false,
-            address(0xB0B),
-            uint256(0),
-            bytes("")
-        );
+        return abi.encode(uint64(1), uint64(21_000), address(0xA11CE), false, address(0xB0B), uint256(0), bytes(""));
     }
 
     function _typeSpecificChunk(uint8 txType) private pure returns (bytes memory) {
@@ -151,9 +139,7 @@ library ReceiptBuilder {
         }
         // Type 2: (chainId, maxPriorityFeePerGas, maxFeePerGas, accessList, yParity, r, s)
         AccessListEntry[] memory accessList = new AccessListEntry[](0);
-        return abi.encode(
-            uint64(1), uint128(1 gwei), uint128(2 gwei), accessList, uint8(0), bytes32(0), bytes32(0)
-        );
+        return abi.encode(uint64(1), uint128(1 gwei), uint128(2 gwei), accessList, uint8(0), bytes32(0), bytes32(0));
     }
 
     function _receiptChunk(uint8 status, Log[] memory logs) private pure returns (bytes memory) {

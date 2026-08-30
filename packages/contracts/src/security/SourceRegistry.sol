@@ -21,9 +21,7 @@ abstract contract SourceRegistry {
     mapping(bytes32 => VouchTypes.RegisteredSource) private _sources;
     bytes32[] private _factTypes;
 
-    event SourceRegistered(
-        bytes32 indexed factType, uint64 indexed chainKey, address indexed emitter, bytes32 topic0
-    );
+    event SourceRegistered(bytes32 indexed factType, uint64 indexed chainKey, address indexed emitter, bytes32 topic0);
     event SourceEnabledSet(bytes32 indexed factType, bool enabled);
 
     modifier onlyAdmin() {
@@ -36,13 +34,10 @@ abstract contract SourceRegistry {
         admin = admin_;
     }
 
-    function registerSource(
-        bytes32 factType,
-        uint64 chainKey,
-        address emitter,
-        bytes32 topic0,
-        uint8 subjectTopicIndex
-    ) external onlyAdmin {
+    function registerSource(bytes32 factType, uint64 chainKey, address emitter, bytes32 topic0, uint8 subjectTopicIndex)
+        external
+        onlyAdmin
+    {
         if (emitter == address(0)) revert VouchErrors.ZeroAddress();
 
         if (_sources[factType].emitter == address(0)) {
@@ -74,11 +69,7 @@ abstract contract SourceRegistry {
         return _factTypes;
     }
 
-    function _requireEnabledSource(bytes32 factType)
-        internal
-        view
-        returns (VouchTypes.RegisteredSource memory src)
-    {
+    function _requireEnabledSource(bytes32 factType) internal view returns (VouchTypes.RegisteredSource memory src) {
         src = _sources[factType];
         if (src.emitter == address(0)) {
             revert VouchErrors.SourceNotRegistered(0, address(0), factType);

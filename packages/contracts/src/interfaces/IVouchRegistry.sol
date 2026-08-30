@@ -15,14 +15,11 @@ import {VouchTypes} from "../core/VouchTypes.sol";
 ///      repayment is worth a lower collateral ratio, a fee tier, or a game
 ///      unlock is the consumer's decision.
 interface IVouchRegistry {
-    event FactVerified(
-        bytes32 indexed factId, address indexed subject, bytes32 indexed factType, uint256 value
-    );
+    event FactVerified(bytes32 indexed factId, address indexed subject, bytes32 indexed factType, uint256 value);
 
-    function submitBatch(
-        VouchTypes.BatchContinuity calldata continuity,
-        VouchTypes.FactClaim[] calldata claims
-    ) external returns (uint256 verifiedCount);
+    function submitBatch(VouchTypes.BatchContinuity calldata continuity, VouchTypes.FactClaim[] calldata claims)
+        external
+        returns (uint256 verifiedCount);
 
     // --- the primitive ---
     function hasProof(address subject, bytes32 factType) external view returns (bool);

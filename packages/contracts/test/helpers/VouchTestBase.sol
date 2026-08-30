@@ -47,12 +47,8 @@ abstract contract VouchTestBase is Test {
         registry = new VouchRegistry(ADMIN);
 
         vm.startPrank(ADMIN);
-        registry.registerSource(
-            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2
-        );
-        registry.registerSource(
-            FactTypes.LONG_TERM_LP, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_SUPPLY, 2
-        );
+        registry.registerSource(FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2);
+        registry.registerSource(FactTypes.LONG_TERM_LP, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_SUPPLY, 2);
         vm.stopPrank();
     }
 
@@ -78,11 +74,7 @@ abstract contract VouchTestBase is Test {
         return VouchTypes.BatchContinuity({lowerEndpointDigest: keccak256("lower"), roots: roots});
     }
 
-    function _continuityWithRoots(uint256 count)
-        internal
-        pure
-        returns (VouchTypes.BatchContinuity memory)
-    {
+    function _continuityWithRoots(uint256 count) internal pure returns (VouchTypes.BatchContinuity memory) {
         bytes32[] memory roots = new bytes32[](count);
         return VouchTypes.BatchContinuity({lowerEndpointDigest: keccak256("lower"), roots: roots});
     }
@@ -113,18 +105,12 @@ abstract contract VouchTestBase is Test {
         returns (VouchTypes.FactClaim memory)
     {
         bytes memory encoded = ReceiptBuilder.successful(
-            ReceiptBuilder.one(
-                ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, user, amount)
-            )
+            ReceiptBuilder.one(ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, user, amount))
         );
         return _claim(FactTypes.AAVE_REPAYMENT, blockNumber, txHash, 0, encoded);
     }
 
-    function _batch(VouchTypes.FactClaim memory a)
-        internal
-        pure
-        returns (VouchTypes.FactClaim[] memory out)
-    {
+    function _batch(VouchTypes.FactClaim memory a) internal pure returns (VouchTypes.FactClaim[] memory out) {
         out = new VouchTypes.FactClaim[](1);
         out[0] = a;
     }
