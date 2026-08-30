@@ -136,8 +136,32 @@ jobs:
 
       - name: Scan for committed keys
         run: |
-          if git grep -nIE '(PRIVATE_KEY|MNEMONIC)[[:space:]]*=[[:space:]]*[^[:space:]]+' -- ':!*.example' ':!.github/*'; then
-            echo "::error::A private key or mnemonic appears to be committed."
-            exit 1
+          # Matches key MATERIAL, not the word. An earlier version matched any
+          # assignment to PRIVATE_KEY and failed on a `0x...` placeholder in
+          # deployment docs -- and a scanner that cries wolf on documentation is
+          # a scanner somebody disables, at which point it protects nothing.
+          #
+          # A secp256k1 private key is 64 hex characters. A BIP-39 mnemonic is
+          # twelve or more lowercase words. Both are matched precisely; neither
+          # placeholders nor prose can trip them.
+          fail=0
+
+          if git grep -nIE '(PRIVATE_KEY|SECRET_KEY)[[:space:]]*[=:][[:space:]]*.?(0x)?[0-9a-fA-F]{64}'                -- ':!*.example' ':!.github/*'; then
+            echo "::error::A 64-hex-character private key appears to be committed."
+            fail=1
           fi
+
+          if git grep -nIE 'MNEMONIC[[:space:]]*[=:][[:space:]]*.?([a-z]+ ){11,}[a-z]+'                -- ':!*.example' ':!.github/*'; then
+            echo "::error::A BIP-39 mnemonic appears to be committed."
+            fail=1
+          fi
+
+          # A funded key is useless without an RPC, so a hardcoded endpoint
+          # carrying an API key is worth catching in the same pass.
+          if git grep -nIE '(infura|alchemy)\.io/v[0-9]/[0-9a-zA-Z]{20,}'                -- ':!*.example' ':!.github/*'; then
+            echo "::error::An RPC URL with an embedded API key appears to be committed."
+            fail=1
+          fi
+
+          if [ "$fail" = "1" ]; then exit 1; fi
           echo "No committed keys found."
