@@ -1,25 +1,26 @@
 import type { Metadata } from "next";
 
 export const siteConfig = {
-  name: "React Bits Pro - SaaS Template",
+  name: "Vouch",
+  tagline: "Portable On-Chain Standing",
   description:
-    "A modern, accessible landing page template built with Next.js, Tailwind CSS, and TypeScript.",
-  url: "https://example.com",
+    "A shared standing registry for Creditcoin. Prove what you have done on any supported chain once, and let every application recognise it.",
+  url: "https://vouch-registry.vercel.app",
   ogImage: "/og-image.png",
-  creator: "@yourhandle",
+  creator: "@vouch",
   authors: [
     {
-      name: "Your Name",
-      url: "https://example.com",
+      name: "Vouch",
+      url: "https://github.com/Venkat5599/CTC",
     },
   ],
   keywords: [
-    "landing page",
-    "template",
-    "Next.js",
-    "React",
-    "Tailwind CSS",
-    "TypeScript",
+    "Creditcoin",
+    "Attestcoin",
+    "cross-chain proofs",
+    "on-chain reputation",
+    "portable standing",
+    "DeFi",
   ],
 } as const;
 

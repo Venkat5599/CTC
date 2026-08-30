@@ -5,13 +5,13 @@ import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
 import { Pricing } from "@/components/pricing";
-import { Testimonials } from "@/components/testimonials";
+import { SecurityGuards } from "@/components/security-guards";
 import { createMetadata, siteConfig } from "@/lib/metadata";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 
 export const metadata: Metadata = createMetadata({
-  title: "React Bits Pro - SaaS Template",
+  title: `${siteConfig.name} - ${siteConfig.tagline}`,
   description: `Welcome to ${siteConfig.name}. ${siteConfig.description}`,
   path: "/",
 });
@@ -22,7 +22,7 @@ export default function HomePage(): ReactNode {
       <Hero />
       <BlurInHeadline />
       <FeaturesBento />
-      <Testimonials />
+      <SecurityGuards />
       <HowItWorks />
       <Pricing />
       <FAQ />

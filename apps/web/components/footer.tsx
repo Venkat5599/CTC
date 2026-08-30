@@ -61,9 +61,9 @@ export function Footer(): ReactNode {
       <div className="bg-accent rounded-tr-[3rem] rounded-tl-[3rem] pt-96 pb-16 max-[850px]:pt-72">
         <div className="max-w-5xl mx-auto px-6">
           <div className="flex items-start justify-between gap-12 max-[850px]:flex-col max-[850px]:gap-10">
-            <a href="#" className="flex items-center gap-2" aria-label="Circular home">
+            <a href="#" className="flex items-center gap-2" aria-label="Vouch home">
               <div className="w-8 h-8 rounded-full bg-neutral-900" />
-              <span className="text-xl font-semibold text-neutral-900 leading-0">Circular</span>
+              <span className="text-xl font-semibold text-neutral-900 leading-0">Vouch</span>
             </a>
 
             <nav className="flex gap-16 max-[850px]:gap-10 max-[850px]:flex-wrap" aria-label="Footer navigation">
@@ -110,7 +110,7 @@ export function Footer(): ReactNode {
 
           <div className="mt-16 pt-6">
             <p className="text-sm text-neutral-900/50 text-center">
-              © {new Date().getFullYear()} Circular. All rights reserved.
+              © {new Date().getFullYear()} Vouch. Built for BUIDL CTC 2026.
             </p>
           </div>
         </div>

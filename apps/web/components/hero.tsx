@@ -18,16 +18,37 @@ const fadeInScale = {
   visible: { opacity: 1, scale: 1, filter: "blur(0px)" },
 };
 
-const logos: LogoItem[] = [
-  { node: <Image src="/mock-logos/acmecorp.svg" alt="Acme Corp" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/altshift.svg" alt="Altshift" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/biosynthesis.svg" alt="Biosynthesis" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/boltshift.svg" alt="Boltshift" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/capsule.svg" alt="Capsule" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/catalog.svg" alt="Catalog" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/cloudwatch.svg" alt="Cloudwatch" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/commandr.svg" alt="Commandr" width={120} height={32} className="h-[1em] w-auto" /> },
-];
+/**
+ * The chains Vouch can prove activity from.
+ *
+ * These are supported source chains, NOT customers. The template shipped a loop
+ * of invented company logos here; a protocol whose entire argument is "stop
+ * taking claims on trust" cannot open by claiming customers it does not have.
+ *
+ * Real marks, from Simple Icons, single-colour so the row reads as one row
+ * rather than a pile of brand palettes.
+ */
+const CHAINS = [
+  ["ethereum", "Ethereum"],
+  ["polygon", "Polygon"],
+  ["arbitrum", "Arbitrum"],
+  ["optimism", "Optimism"],
+  ["base", "Base"],
+  ["avalanche", "Avalanche"],
+] as const;
+
+const logos: LogoItem[] = CHAINS.map(([slug, name]) => ({
+  node: (
+    <img
+      src={`https://cdn.simpleicons.org/${slug}/8a8a93`}
+      alt={name}
+      width={28}
+      height={28}
+      className="h-[1em] w-auto opacity-80"
+      loading="lazy"
+    />
+  ),
+}));
 
 const PARALLAX_INTENSITY = 20;
 
