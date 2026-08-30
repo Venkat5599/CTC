@@ -13,7 +13,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from 'react';
  * Pill action.
  *
  * Fully rounded, accent-filled, near-black label. Contrast measured rather than
- * eyeballed: #1a0714 on #f472d0 clears AA comfortably.
+ * eyeballed: #1a0316 on #f99fea is roughly 13:1, well past AA.
  *
  * Does not lift or scale on hover -- a button that hops is a template reflex.
  * The state change is tonal and the label stays where the cursor left it.
@@ -42,6 +42,12 @@ export function Pill({
 /**
  * Centred hero.
  *
+ * Display type is weight 500, not light. That correction came from measuring
+ * the reference rather than eyeballing it: at this scale a 300 reads as thin
+ * and washed out against black, where a medium holds its edge. The largest step
+ * is 64px for the same reason -- past that the line breaks badly at common
+ * laptop widths and the headline stops being two lines.
+ *
  * Four elements at most: headline, subline, one action, and the artifact below.
  * No eyebrow, no version badge, no trust micro-strip, no tagline under the
  * button. The headline is held to two lines by scale rather than by hoping the
@@ -61,7 +67,7 @@ export function Hero({
   return (
     <section className="relative overflow-hidden px-6 pt-24 md:px-10">
       <div className="mx-auto w-full max-w-[1120px]">
-        <h1 className="mx-auto max-w-[16ch] text-center text-[clamp(2.5rem,7vw,4.5rem)] font-light leading-[1.05] tracking-[-0.03em] text-[--color-ink]">
+        <h1 className="mx-auto max-w-[16ch] text-center text-[clamp(2.25rem,6vw,4rem)] font-medium leading-[1.06] tracking-[-0.03em] text-[--color-ink]">
           {headline}
         </h1>
 
@@ -105,7 +111,7 @@ export function SectionHeading({
 
   return (
     <div className={centred ? 'mx-auto max-w-[62ch] text-center' : 'max-w-[52ch]'}>
-      <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-light leading-[1.12] tracking-[-0.025em] text-[--color-ink]">
+      <h2 className="text-[clamp(1.6rem,3.5vw,2.5rem)] font-medium leading-[1.14] tracking-[-0.025em] text-[--color-ink]">
         {children}
       </h2>
       {lead ? (
@@ -196,7 +202,7 @@ export function ClosingCta({
       <div className="ambient bottom-0" aria-hidden />
 
       <div className="relative mx-auto w-full max-w-[1120px] text-center">
-        <h2 className="mx-auto max-w-[18ch] text-[clamp(2.25rem,6vw,4rem)] font-light leading-[1.05] tracking-[-0.03em]">
+        <h2 className="mx-auto max-w-[18ch] text-[clamp(2rem,5.5vw,3.5rem)] font-medium leading-[1.06] tracking-[-0.03em]">
           <span className="text-[--color-accent]">{accent}</span>
           <br />
           <span className="text-[--color-ink]">{headline}</span>

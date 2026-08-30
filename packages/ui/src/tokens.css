@@ -5,6 +5,11 @@
  * elevation inside a single family and nothing inverts to a light surface
  * mid-scroll.
  *
+ * Values are tuned against a reference the brief named. The ground sits at
+ * #050505 rather than a lighter charcoal, muted ink is warm-neutral rather than
+ * blue-grey, and the accent is a light magenta that stays legible against black
+ * instead of a saturated one that vibrates on it.
+ *
  * The accent earns its place by carrying exactly one meaning: the difference
  * between a fact that has been PROVEN and one that has not. It appears on the
  * primary action, on proven standing, and on the live edge of the product
@@ -14,30 +19,30 @@
 
 @theme {
   /* Ground. Not pure #000 -- pure black kills the depth the panels depend on. */
-  --color-base: #08080a;
-  --color-surface: #0e0e11;
-  --color-raised: #141418;
-  --color-overlay: #1b1b20;
+  --color-base: #050505;
+  --color-surface: #0e0e10;
+  --color-raised: #16161a;
+  --color-overlay: #1d1d20;
 
   /* Hairlines. Self-coloured, felt more than seen. */
-  --color-line: #1e1e23;
-  --color-line-strong: #2b2b32;
+  --color-line: #1d1d20;
+  --color-line-strong: #2c2c32;
 
-  --color-ink: #f2f2f4;
-  --color-ink-muted: #a1a1aa;
-  --color-ink-faint: #6b6b76;
+  --color-ink: #ffffff;
+  --color-ink-muted: #cacace;
+  --color-ink-faint: #8a8a93;
 
   /* One accent. */
-  --color-accent: #f472d0;
-  --color-accent-soft: #f9a8dc;
-  --color-accent-dim: #7d3a68;
-  --color-accent-ink: #1a0714;
+  --color-accent: #f99fea;
+  --color-accent-soft: #fdc7f3;
+  --color-accent-dim: #460b3c;
+  --color-accent-ink: #1a0316;
 
   /* Semantic. Standing is proven or unknown -- never good or bad. The absence
      of a proof is not evidence of anything, so "unknown" is neutral rather than
      a warning, and the palette says so. */
-  --color-proven: #f472d0;
-  --color-unknown: #6b6b76;
+  --color-proven: #f99fea;
+  --color-unknown: #8a8a93;
   --color-rejected: #d97757;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
