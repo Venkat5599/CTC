@@ -93,8 +93,10 @@ jobs:
           - packages/schemas
           - packages/proof-engine
           - packages/attestcoin
+          - packages/sdk
           - services/relayer
           - services/indexer
+          - services/worker
     steps:
       - uses: actions/checkout@v4
 
