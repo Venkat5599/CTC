@@ -1,0 +1,179 @@
+name: Deploy
+
+# Deployment to CC3 Testnet.
+#
+# Manual only. There is no push trigger and there should not be one: deployment
+# spends a funded key and, more importantly, source registration writes trust
+# decisions that fail SILENTLY when wrong -- a mistyped topic0 or chainKey does
+# not revert, it produces a registry that looks empty or credits the wrong chain.
+# That is not a thing to automate on merge.
+#
+# The two stages are separate for the same reason, and configure-sources
+# requires typing the word CONFIGURE to run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: 'What to run'
+        required: true
+        type: choice
+        options:
+          - dry-run
+          - deploy-contracts
+          - configure-sources
+        default: dry-run
+      registry_address:
+        description: 'VouchRegistry address (configure-sources only)'
+        required: false
+        type: string
+      confirm:
+        description: 'Type CONFIGURE to register sources. Ignored otherwise.'
+        required: false
+        type: string
+
+env:
+  FOUNDRY_PROFILE: default
+
+jobs:
+  preflight:
+    name: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # Never deploy a red build. The security suite is the gate: if S1, S2 or
+      # S3 regressed, the thing about to be deployed does not do what its
+      # documentation says it does.
+      - name: Full test suite
+        run: forge test -vv
+
+      - name: Contract sizes
+        run: forge build --sizes
+
+  dry-run:
+    name: dry run
+    needs: preflight
+    if: inputs.stage == 'dry-run'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # No --broadcast, no key. Proves the script runs and prints the addresses
+      # it would produce.
+      - name: Simulate deployment
+        run: forge script packages/contracts/script/Deploy.s.sol:Deploy -vvv
+
+  deploy-contracts:
+    name: deploy contracts
+    needs: preflight
+    if: inputs.stage == 'deploy-contracts'
+    runs-on: ubuntu-latest
+    # Environment gate: requires whatever reviewers are configured on
+    # cc3-testnet before the key is exposed to the job.
+    environment: cc3-testnet
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Deploy
+        env:
+          CREDITCOIN_PRIVATE_KEY: ${{ secrets.CREDITCOIN_PRIVATE_KEY }}
+        run: |
+          forge script packages/contracts/script/Deploy.s.sol:Deploy \
+            --rpc-url https://rpc.cc3-testnet.creditcoin.network \
+            --broadcast -vvv | tee deploy.log
+
+      - name: Remind
+        run: |
+          echo "::notice::Record the addresses in packages/config/src/chains.ts under DEPLOYED, and in the README."
+          echo "::notice::Sources are NOT configured. Run the configure-sources stage after verifying topic0 and chainKey against a real receipt."
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log
+          path: deploy.log
+
+  configure-sources:
+    name: configure sources
+    needs: preflight
+    if: inputs.stage == 'configure-sources' && inputs.confirm == 'CONFIGURE'
+    runs-on: ubuntu-latest
+    environment: cc3-testnet
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Require a registry address
+        run: |
+          if [ -z "${{ inputs.registry_address }}" ]; then
+            echo "::error::registry_address is required for configure-sources."
+            exit 1
+          fi
+
+      # Everything this writes is a trust decision that fails silently when
+      # wrong. chainKey is not chainId: on CC3 Testnet 1 is Sepolia and 3 is
+      # Ethereum mainnet, and picking the wrong one credits faucet activity as
+      # real history without complaint.
+      - name: Register sources
+        env:
+          CREDITCOIN_PRIVATE_KEY: ${{ secrets.CREDITCOIN_PRIVATE_KEY }}
+          VOUCH_REGISTRY_ADDRESS: ${{ inputs.registry_address }}
+        run: |
+          forge script packages/contracts/script/ConfigureSources.s.sol:ConfigureSources \
+            --rpc-url https://rpc.cc3-testnet.creditcoin.network \
+            --broadcast -vvv
+
+      - name: Verify what was written
+        env:
+          VOUCH_REGISTRY_ADDRESS: ${{ inputs.registry_address }}
+        run: |
+          echo "::notice::Read registeredFactTypes() back and check each emitter and topic0 against a real source-chain receipt."
+          cast call "$VOUCH_REGISTRY_ADDRESS" "registeredFactTypes()(bytes32[])" \
+            --rpc-url https://rpc.cc3-testnet.creditcoin.network

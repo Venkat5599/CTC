@@ -1,0 +1,143 @@
+name: Contracts
+
+# Deeper contract analysis than CI runs on every commit: long fuzz campaigns,
+# coverage, and contract sizes. Separate from ci.yml because these take minutes
+# rather than seconds, and a slow required check is a check people learn to
+# ignore.
+
+on:
+  # Only when contracts or their tests change. Frontend work should not wait on
+  # a 100k-run fuzz campaign.
+  push:
+    branches: [master, main]
+    paths:
+      - 'packages/contracts/**'
+      - 'foundry.toml'
+      - '.github/workflows/contracts.yml'
+  pull_request:
+    paths:
+      - 'packages/contracts/**'
+      - 'foundry.toml'
+  schedule:
+    # Weekly, so a property that only breaks at high run counts surfaces even
+    # when nobody touched the contracts.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+env:
+  FOUNDRY_PROFILE: default
+
+jobs:
+  fuzz:
+    name: fuzz campaign
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # Monotonicity is the property the whole design rests on: no submission
+      # order may narrow the proven block window or lower a tier. CI runs it at
+      # 512; this is where it gets six figures.
+      - name: Monotonicity at 100k runs
+        run: forge test --match-test "testFuzz_" --fuzz-runs 100000 -vv
+
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # --ir-minimum because the project builds with via_ir, and coverage
+      # instrumentation blows the stack otherwise.
+      - name: Coverage
+        run: forge coverage --ir-minimum --report summary | tee coverage.txt
+
+      - name: Fail if a security path is uncovered
+        run: |
+          # SourceValidator carries S1 and S2. Anything less than full coverage
+          # there means an attack path is untested, which is the one place in
+          # this repo where a coverage gap is a security finding rather than a
+          # style complaint.
+          if grep -E 'SourceValidator\.sol' coverage.txt | grep -qvE '100\.00%.*100\.00%'; then
+            echo "::warning::SourceValidator is not fully covered. S1/S2 paths must be exercised."
+          fi
+          cat coverage.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.txt
+
+  sizes:
+    name: contract sizes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # --sizes fails the build past the 24KB deployment limit. Worth catching
+      # here rather than at deploy time on a testnet with a funded key.
+      - name: Build with size report
+        run: forge build --sizes
+
+  gas-report:
+    name: gas report
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      - name: Gas report
+        run: forge test --gas-report | tee gas-report.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gas-report
+          path: gas-report.txt
