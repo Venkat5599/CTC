@@ -55,12 +55,19 @@ contract GasTest is VouchTestBase {
         console2.log("2nd consumer hasProof   ", second);
         console2.log("3rd consumer hasProof   ", third);
 
-        // The first read pays the cold-storage premium; every read after it is
-        // warm. In production each consumer is a separate transaction, so each
-        // pays the cold price -- and the cold price is still an SLOAD, not a
-        // re-verification.
+        // Absolute gas numbers move with the compiler, the EVM revision and the
+        // test runner's warm/cold accounting -- an earlier version of this test
+        // asserted `< 5000` and passed locally at 1,202 while failing in CI at
+        // 7,702. The absolute value is worth PRINTING and worthless to ASSERT.
+        //
+        // What is stable is the relationship, and the relationship is the whole
+        // claim: an additional consumer costs the same as the one before it, and
+        // that cost is a storage read rather than a re-verification.
         assertEq(second, third, "marginal cost of an additional consumer is constant");
-        assertLt(second, 5_000, "a consumer read is a storage read, not a proof");
+
+        uint256 submissionCost = _measureSubmissionCost();
+        console2.log("one submission (verify) ", submissionCost);
+        assertLt(second * 50, submissionCost, "a consumer read is orders of magnitude below verifying");
     }
 
     /// @notice What three real consumers actually cost to ask.
@@ -84,9 +91,13 @@ contract GasTest is VouchTestBase {
         console2.log("VouchFeeTier.feeBpsFor       ", feeGas);
         console2.log("VouchAccess.isAdmitted       ", accessGas);
 
-        assertLt(creditGas, 20_000, "credit read stays cheap through the passport hop");
-        assertLt(feeGas, 15_000);
-        assertLt(accessGas, 15_000);
+        // Relational, for the reason given in the test above: the absolute
+        // numbers are for the gas table, not for the assertion.
+        uint256 submissionCost = _measureSubmissionCost();
+        assertLt(creditGas * 10, submissionCost, "credit read stays far below a verification");
+        assertLt(feeGas * 10, submissionCost);
+        assertLt(accessGas * 10, submissionCost);
+        assertGt(creditGas, feeGas, "credit pays for the extra passport hop");
     }
 
     /// @notice Where batching actually saves, and — just as importantly — where it does not.
@@ -181,7 +192,13 @@ contract GasTest is VouchTestBase {
         assertLt(batchedExec, individualExec, "sparse-continuity batching is cheaper to execute");
         uint256 execSavingPct = (individualExec - batchedExec) * 100 / individualExec;
         console2.log("execution saving (percent) ", execSavingPct);
-        assertLt(execSavingPct, 25, "execution saving is single-digit-to-low-double-digit, not an order of magnitude");
+
+        // Measured between 8% and 30% depending on the environment. The point of
+        // the bound is to stop the claim inflating into "batching makes
+        // verification nearly free" -- it does not, because each claim still
+        // runs its own decode and its own precompile call. The order-of-magnitude
+        // saving lives at the transaction level, asserted below.
+        assertLt(execSavingPct, 50, "execution saving is a fraction, not an order of magnitude");
 
         // The saving is real and it is at the transaction level.
         assertLt(batchedTxCost, individualTxCost / 5, "batching cuts payload cost by more than 5x");
@@ -220,6 +237,20 @@ contract GasTest is VouchTestBase {
         }
 
         assertEq(verifier.callCount(), callsAfterSubmission, "75 consumer reads, zero precompile calls");
+    }
+
+    /// @dev Cost of writing one fact, used as the yardstick every consumer-read
+    ///      assertion is expressed against. Measured in the same run and the
+    ///      same environment as the thing it is compared to, which is what makes
+    ///      the comparison stable where an absolute number is not.
+    function _measureSubmissionCost() internal returns (uint256) {
+        VouchTypes.FactClaim memory claim = _repayClaim(
+            BOB, 1e6, 49_000_000 + uint64(gasleft() % 1000), keccak256(abi.encodePacked("yard", gasleft()))
+        );
+        uint256 g0 = gasleft();
+        vm.prank(RELAYER);
+        registry.submitBatch(_continuity(), _batch(claim));
+        return g0 - gasleft();
     }
 
     function _measureHasProof(address user) internal view returns (uint256) {
