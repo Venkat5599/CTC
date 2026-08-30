@@ -155,7 +155,7 @@ function StepByStepCard(): ReactNode {
               Reuse forever.
             </h4>
             <p className="text-sm text-neutral-500 leading-snug mb-8">
-              Invite your team and start collaborating instantly.
+              One verification, then every application reads it for free.
             </p>
 
             {/* Project Card */}
@@ -223,7 +223,7 @@ function DashboardCard(): ReactNode {
           Verified facts
         </h3>
         <p className="text-card-foreground-muted text-sm">
-          Monitor metrics, analytics, and team activity instantly
+          Every fact traces back to the transaction it was drawn from
         </p>
       </div>
 
