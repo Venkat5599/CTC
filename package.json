@@ -3,11 +3,30 @@
   "private": true,
   "version": "0.1.0",
   "description": "Portable On-Chain Standing. Attestcoin proves the fact. Vouch makes the fact reusable.",
+  "packageManager": "pnpm@9.12.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
   "scripts": {
+    "build": "turbo run build",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev",
     "build:contracts": "forge build",
-    "test:contracts": "forge test -vv"
+    "test:contracts": "forge test -vv",
+    "fmt:contracts": "forge fmt",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "typescript": "^5.6.0"
   },
   "dependencies": {
-    "@gluwa/usc-contracts": "^0.2.0"
+    "@gluwa/usc-contracts": "^0.2.0",
+    "@openzeppelin/contracts": "^5.0.0"
   }
 }

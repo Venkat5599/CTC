@@ -1,0 +1,12 @@
+{
+  "display": "Vouch Node service",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "outDir": "dist",
+    "rootDir": "src"
+  }
+}

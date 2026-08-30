@@ -1,0 +1,437 @@
+// Vouch — persistence layer.
+//
+// THE ONE THING TO UNDERSTAND ABOUT THIS SCHEMA
+//
+// None of it is authoritative. On-chain state is the truth; every table here is
+// either a work queue for facts that have not been proven yet, or a cached
+// mirror of facts that already have been. If this database is dropped, no
+// standing is lost -- a fresh indexer replays the source chain and the registry,
+// and arrives at the same place. Nothing downstream should ever read a benefit
+// decision from Postgres when it could read it from `hasProof`.
+//
+// That is not a nice property, it is the reason the design works. A relayer
+// that could be believed would be a relayer that could lie, and the whole
+// argument for a permissionless `submitBatch` is that it cannot.
+//
+// The pipeline these tables serve:
+//
+//   Ethereum event -> discovery -> fact candidate -> queue -> batch scheduler
+//   (same chain, same range, same deadline) -> proof builder -> Attestcoin
+//   -> Creditcoin
+//
+// SourceEvent is discovery. VerificationJob is the queue and the scheduler.
+// Proof is the builder's output. Transaction is the submission. Fact is what
+// came back verified, and PassportFact is the aggregation consumers read.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum SourceEventStatus {
+  /// Discovered on the source chain, not yet queued.
+  DISCOVERED
+  /// Assigned to a verification job.
+  QUEUED
+  /// Written on chain and mirrored into Fact.
+  VERIFIED
+  /// Rejected by the registry. `failureReason` says which guard fired.
+  REJECTED
+  /// Already present in the registry when we got there. Not an error: proofs are
+  /// public and anyone may submit them, which is the point of a permissionless
+  /// registry. Distinguished from VERIFIED because we did not pay for it.
+  ALREADY_VERIFIED
+}
+
+enum JobStatus {
+  /// Waiting for its window to fill or its deadline to arrive.
+  PENDING
+  /// Proof builder called, awaiting artifacts.
+  BUILDING
+  /// Proof in hand, transaction not yet confirmed.
+  SUBMITTING
+  CONFIRMED
+  /// Exhausted retries. Requires operator attention, blocks nothing.
+  FAILED
+}
+
+enum TransactionStatus {
+  PENDING
+  CONFIRMED
+  REVERTED
+  /// Dropped from the mempool or replaced. Retryable.
+  DROPPED
+}
+
+enum ProofKind {
+  /// One per transaction being proven.
+  INCLUSION
+  /// One per batch, shared across up to MAX_BATCH_SIZE claims. This sharing is
+  /// the entire economic argument for batching.
+  CONTINUITY
+}
+
+// ---------------------------------------------------------------------------
+// users
+// ---------------------------------------------------------------------------
+
+/// A subject with proven standing.
+///
+/// Rows appear only once a fact has been verified FOR the address. There is no
+/// signup, no profile and no authentication anywhere in Vouch -- a "user" is
+/// simply an address the registry has something to say about, which is why this
+/// table has no email, no password and no session.
+///
+/// The aggregate columns are a denormalised mirror of the registry's own
+/// aggregates, kept for fast listing and explorer queries. They are refreshed
+/// from chain, never incremented from application logic, because doing the
+/// latter would let a bug here disagree with the chain silently.
+model User {
+  /// Lowercase 0x-prefixed EVM address.
+  address String @id @db.VarChar(42)
+
+  /// Mirrors VouchRegistry.totalProofs.
+  totalProofs Int @default(0)
+
+  /// Mirrors firstSeen / lastSeen: the source-block bounds of proven activity.
+  /// Both only ever widen, because the registry has no path that removes a fact.
+  firstSeenBlock BigInt?
+  lastSeenBlock  BigInt?
+
+  /// Mirrors VouchPassport.tierOf. Monotonic by construction upstream.
+  tier Int @default(0)
+
+  /// Set when the mirror was last reconciled against chain state.
+  syncedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  facts         Fact[]
+  passportFacts PassportFact[]
+  sourceEvents  SourceEvent[]
+
+  @@index([tier])
+  @@index([lastSeenBlock])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------------
+// source_events
+// ---------------------------------------------------------------------------
+
+/// A candidate fact spotted on the source chain. Discovery output.
+///
+/// This is the only table written from data that has NOT been proven. Every
+/// field is a claim about Ethereum that the registry will independently re-check
+/// against the proven payload before it counts, so a corrupted row here produces
+/// a rejected submission rather than a false fact.
+///
+/// `logIndex` is the RECEIPT-WIDE index, taken from the node's `eth_getLogs`
+/// response and never recomputed by enumeration. An earlier version of the
+/// contracts derived it from a filtered array instead, which named nothing on
+/// the source chain and made every log after the first unclaimable; the column
+/// carries the same meaning as the on-chain one deliberately.
+model SourceEvent {
+  id String @id @default(cuid())
+
+  /// Attestcoin chain key. NOT an EVM chainId -- on CC3 Testnet 3 is Ethereum
+  /// mainnet and 1 is Sepolia. Storing a chainId here would be a silent
+  /// trust-the-wrong-chain bug, so the column is named for what it holds.
+  chainKey    Int
+  blockNumber BigInt
+  txHash      String @db.VarChar(66)
+  logIndex    Int
+
+  /// The pinned contract that emitted the log (S2).
+  emitter String @db.VarChar(42)
+  /// Event signature hash, as registered in SourceRegistry.
+  topic0  String @db.VarChar(66)
+
+  factType String @db.VarChar(66)
+
+  /// Read from the log's subject topic, never from a submitter.
+  subjectAddress String @db.VarChar(42)
+  /// First word of log data, as a decimal string. Stored as text because the
+  /// values are uint256 and exceed every native numeric type here.
+  value          String @db.VarChar(80)
+
+  /// Source-chain block time, for deadline scheduling and display.
+  blockTimestamp DateTime?
+
+  status        SourceEventStatus @default(DISCOVERED)
+  failureReason String?
+
+  discoveredAt DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user   User?   @relation(fields: [subjectAddress], references: [address], onDelete: Cascade)
+  job    VerificationJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  jobId  String?
+  fact   Fact?
+
+  /// Mirrors the on-chain replay key. The registry keys on
+  /// (chainKey, blockNumber, txHash, factType, logIndex), so the same log
+  /// registered under two DIFFERENT fact types is two legitimate rows here too.
+  @@unique([chainKey, blockNumber, txHash, logIndex, factType], name: "sourceLogIdentity")
+  @@index([status, chainKey, blockNumber])
+  @@index([subjectAddress])
+  @@index([jobId])
+  @@map("source_events")
+}
+
+// ---------------------------------------------------------------------------
+// verification_jobs
+// ---------------------------------------------------------------------------
+
+/// One batch: the queue entry and the scheduler's unit of work.
+///
+/// A job groups claims that share a chain, a 1000-block window and a deadline --
+/// the three things Attestcoin requires before one continuity proof can cover
+/// them all. Nothing requires the claims to belong to the same USER, and that
+/// omission is what makes cross-user packing possible: ten strangers' facts ride
+/// one proof where ten separate integrations would need ten.
+///
+/// The deadline exists because waiting for a window to fill is a tradeoff, not a
+/// free optimisation. A batch held open too long is a user staring at a pending
+/// passport; a batch sent too early wastes the proof it just paid for. The
+/// scheduler sends when the window is full OR the deadline passes, whichever
+/// comes first.
+model VerificationJob {
+  id String @id @default(cuid())
+
+  chainKey Int
+
+  /// Continuity window, inclusive lower and exclusive upper bound. Anchored to
+  /// absolute multiples of 1000 rather than to the first claim seen, so two
+  /// relayers partition identically and the loser reverts on the replay guard
+  /// instead of writing something different.
+  windowStart BigInt
+  windowEnd   BigInt
+
+  status JobStatus @default(PENDING)
+
+  /// Send by this time even if the batch is not full.
+  deadlineAt DateTime
+
+  /// Higher runs first. Lets a live demo jump a backfill queue.
+  priority Int @default(0)
+
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  lastError   String?
+  nextRetryAt DateTime?
+
+  createdAt   DateTime  @default(now())
+  submittedAt DateTime?
+  confirmedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  claims       SourceEvent[]
+  proofs       Proof[]
+  transactions Transaction[]
+
+  /// One open job per window per chain. The partial index is what stops two
+  /// scheduler instances opening competing jobs for the same window.
+  @@index([status, deadlineAt])
+  @@index([status, priority, createdAt])
+  @@index([chainKey, windowStart])
+  @@map("verification_jobs")
+}
+
+// ---------------------------------------------------------------------------
+// proofs
+// ---------------------------------------------------------------------------
+
+/// A proof artifact returned by the Attestcoin proof builder.
+///
+/// Cached because proofs are expensive to build and cheap to store, and because
+/// a failed submission should be retryable without paying the builder twice. A
+/// CONTINUITY proof belongs to the whole job; an INCLUSION proof belongs to one
+/// transaction within it.
+model Proof {
+  id String @id @default(cuid())
+
+  kind ProofKind
+
+  jobId String
+  job   VerificationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  /// Set for INCLUSION proofs; null for the job-wide CONTINUITY proof.
+  txHash String? @db.VarChar(66)
+
+  /// Prover-encoded transaction bytes, hex. This is the payload the registry
+  /// decodes and re-validates -- the source of subject, value and receipt
+  /// status once it has been proven.
+  encodedTransaction String?
+
+  merkleRoot String? @db.VarChar(66)
+  /// Merkle siblings as JSON: [{ hash, isLeft }].
+  siblings   Json?
+
+  lowerEndpointDigest String? @db.VarChar(66)
+  /// Continuity roots as a JSON array of hex strings.
+  roots               Json?
+
+  /// Number of roots. The single best predictor of verification cost: a recent
+  /// block sits ~10 hashes from a dense attestation, but after roughly a day
+  /// attestations become 1-per-1000-block checkpoints and the same proof needs
+  /// ~1000. Recorded so the gas table can be built from real data.
+  rootCount Int?
+
+  /// Bytes on the wire, for the calldata half of the cost model.
+  sizeBytes Int?
+
+  builtAt   DateTime @default(now())
+  expiresAt DateTime?
+
+  @@index([jobId, kind])
+  @@index([txHash])
+  @@map("proofs")
+}
+
+// ---------------------------------------------------------------------------
+// transactions
+// ---------------------------------------------------------------------------
+
+/// A Creditcoin submission. Settlement.
+///
+/// Separate from VerificationJob because one job may need several attempts --
+/// a dropped transaction, a gas bump, a reorg -- and collapsing them into the
+/// job would lose the history that makes a stuck relayer diagnosable.
+model Transaction {
+  id String @id @default(cuid())
+
+  hash String @unique @db.VarChar(66)
+
+  jobId String
+  job   VerificationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  status TransactionStatus @default(PENDING)
+
+  /// The submitting wallet. It pays gas and grants no authority: the registry
+  /// reads every subject from the proven log, so this address cannot claim
+  /// standing for itself by submitting.
+  submitter String @db.VarChar(42)
+
+  blockNumber BigInt?
+  gasUsed     BigInt?
+  /// Wei, as a decimal string.
+  gasPrice    String? @db.VarChar(80)
+
+  /// How many claims this transaction carried, for cost-per-fact reporting.
+  claimCount Int @default(0)
+  /// How many the registry actually wrote.
+  verifiedCount Int @default(0)
+
+  revertReason String?
+
+  submittedAt DateTime  @default(now())
+  confirmedAt DateTime?
+
+  @@index([jobId, status])
+  @@index([status, submittedAt])
+  @@map("transactions")
+}
+
+// ---------------------------------------------------------------------------
+// facts
+// ---------------------------------------------------------------------------
+
+/// A verified fact, mirrored from the registry.
+///
+/// The read model. Consumers on chain call `hasProof`; explorers, dashboards and
+/// APIs read this, because paginating an address's history over RPC is painful
+/// and pointless when the data is append-only. Append-only is exactly why the
+/// mirror is safe: rows are never updated or deleted, because the registry has
+/// no code path that removes or decrements a fact.
+model Fact {
+  /// keccak(chainKey, blockNumber, txHash, factType, logIndex) -- identical to
+  /// the on-chain factId, so a row can be verified against chain by id alone.
+  factId String @id @db.VarChar(66)
+
+  subjectAddress String @db.VarChar(42)
+  user           User   @relation(fields: [subjectAddress], references: [address], onDelete: Cascade)
+
+  factType String @db.VarChar(66)
+
+  sourceChainKey Int
+  blockNumber    BigInt
+  txHash         String @db.VarChar(66)
+  logIndex       Int
+
+  /// The pinned emitter that produced the log (S2).
+  emitter String @db.VarChar(42)
+
+  /// uint256 as a decimal string.
+  value       String @db.VarChar(80)
+  /// keccak of the full log data. Commits to the payload without storing it.
+  payloadHash String @db.VarChar(66)
+
+  /// Creditcoin block timestamp of verification.
+  verifiedAt DateTime
+
+  /// The Creditcoin transaction that wrote it.
+  creditcoinTxHash String? @db.VarChar(66)
+
+  sourceEventId String?      @unique
+  sourceEvent   SourceEvent? @relation(fields: [sourceEventId], references: [id], onDelete: SetNull)
+
+  passportFacts PassportFact[]
+
+  createdAt DateTime @default(now())
+
+  @@index([subjectAddress, factType])
+  @@index([factType, verifiedAt])
+  @@index([blockNumber])
+  @@map("facts")
+}
+
+// ---------------------------------------------------------------------------
+// passport_facts
+// ---------------------------------------------------------------------------
+
+/// The join between a subject and the facts that make up their standing.
+///
+/// Denormalised on purpose. `facts` answers "what is this fact", this answers
+/// "what does this address's standing consist of, per fact type, in order" --
+/// the query a passport page runs on every load. `contributesToTier` records
+/// whether a fact fed the tier calculation at the time, which is what lets the
+/// UI explain a tier instead of merely asserting it.
+///
+/// A row is never removed. Standing is monotonic, and a join table that could
+/// shrink would quietly reintroduce the possibility of a falling tier that the
+/// contracts went to some trouble to make structurally impossible.
+model PassportFact {
+  id String @id @default(cuid())
+
+  userAddress String @db.VarChar(42)
+  user        User   @relation(fields: [userAddress], references: [address], onDelete: Cascade)
+
+  factId String
+  fact   Fact   @relation(fields: [factId], references: [factId], onDelete: Cascade)
+
+  factType String @db.VarChar(66)
+
+  /// Position in this address's history for this fact type, oldest first.
+  sequence Int
+
+  /// Whether this fact counted toward the tier when it landed.
+  contributesToTier Boolean @default(true)
+
+  /// Source block, duplicated so the passport timeline sorts without a join.
+  sourceBlockNumber BigInt
+
+  createdAt DateTime @default(now())
+
+  @@unique([userAddress, factId])
+  @@index([userAddress, factType, sequence])
+  @@map("passport_facts")
+}
