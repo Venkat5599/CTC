@@ -95,12 +95,16 @@ jobs:
       matrix:
         include:
           - app: web
+            alias: vouch-registry.vercel.app
             project_id_secret: VERCEL_PROJECT_ID_WEB
           - app: explorer
+            alias: vouch-explorer.vercel.app
             project_id_secret: VERCEL_PROJECT_ID_EXPLORER
           - app: docs
+            alias: vouch-protocol-docs.vercel.app
             project_id_secret: VERCEL_PROJECT_ID_DOCS
           - app: demo-credit
+            alias: vouch-demo-credit.vercel.app
             project_id_secret: VERCEL_PROJECT_ID_DEMO
     steps:
       - uses: actions/checkout@v4
@@ -134,6 +138,20 @@ jobs:
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "::notice title=${{ matrix.app }}::$url"
 
+      # A Vercel deployment gets a fresh generated URL every time and the
+      # stable domain does NOT follow it. Skipping this meant the site was
+      # deployed and the public link still served the previous build, which is
+      # the most confusing possible failure: everything green, nothing changed.
+      - name: Point the stable domain at this deployment
+        if: github.event_name != 'pull_request'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          target=$(echo "${{ steps.deploy.outputs.url }}" | sed 's#^https://##')
+          vercel alias set "$target" "${{ matrix.alias }}"             --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+          echo "::notice title=${{ matrix.app }}::https://${{ matrix.alias }}"
+
       # A status code is not evidence. Every one of these returned HTTP 200 on
       # its first publish while serving Vercel's login page, because Deployment
       # Protection is on by default -- so a check that only reads the code would
@@ -141,7 +159,7 @@ jobs:
       - name: Smoke test the deployed URL
         run: |
           for attempt in 1 2 3 4 5; do
-            body=$(curl -sL --max-time 20 "${{ steps.deploy.outputs.url }}" || true)
+            body=$(curl -sL --max-time 20 "https://${{ matrix.alias }}" || true)
             if printf '%s' "$body" | grep -qi '<title>[^<]*Vouch\|<title>[^<]*standing'; then
               echo "Serving real content."
               exit 0
