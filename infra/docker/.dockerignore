@@ -1,0 +1,12 @@
+node_modules
+**/node_modules
+**/dist
+**/.next
+**/out
+cache
+lib
+.git
+.github
+apps
+docs
+tests

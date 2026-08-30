@@ -1,0 +1,41 @@
+# Scrape config.
+#
+# The services run on the host rather than in the compose network, so targets
+# use host.docker.internal. The 15s interval is deliberate: the numbers that
+# matter here move on the timescale of a batch deadline (15s interactive, 2min
+# standard), and scraping faster would mostly sample the gaps between shipments.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: vouch
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: relayer
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:8080']
+        labels:
+          service: relayer
+
+  - job_name: indexer
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:8081']
+        labels:
+          service: indexer
+
+  - job_name: worker
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['host.docker.internal:8082']
+        labels:
+          service: worker

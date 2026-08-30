@@ -1,0 +1,76 @@
+# Alerts.
+#
+# Every rule here fires on a LIVENESS problem, because that is the only class of
+# failure the off-chain half of Vouch can have. It cannot corrupt standing --
+# the registry re-derives every field from the proven payload before storing it
+# -- so there is no correctness alert to write. What it can do is stop, stall,
+# or go quiet, and all three look identical to "nothing is happening" unless
+# something is watching for them.
+
+groups:
+  - name: vouch-liveness
+    rules:
+      # The important one. Every way of misconfiguring a source fails silently:
+      # a wrong topic0, a wrong emitter and a wrong chainKey all match zero logs
+      # and the registry simply appears empty. Nothing can distinguish that from
+      # a quiet protocol, so silence is surfaced as a condition for a human to
+      # judge rather than swallowed as an absence.
+      - alert: SourceSilent
+        expr: time() - vouch_source_last_fact_timestamp_seconds > 21600
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'No fact from {{ $labels.fact_type }} in 6h'
+          description: >-
+            Either the protocol is quiet or the source configuration drifted.
+            Verify topic0, emitter and chainKey against the source chain: all
+            three fail silently when wrong.
+
+      # A job past its retry budget is kept rather than dropped precisely so it
+      # can be seen here. An invisible permanent failure, in a system whose whole
+      # value is that the fact eventually lands, is the worst available outcome.
+      - alert: JobsStuck
+        expr: vouch_jobs_stuck > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: '{{ $value }} verification job(s) exhausted their retries'
+
+      - alert: QueueBacklog
+        expr: vouch_queue_pending_claims > 500
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Queue backlog: {{ $value }} claims pending'
+
+      # The scheduler ships on a deadline. A job an hour past its deadline means
+      # the loop is not running, not that it is waiting for a batch to fill.
+      - alert: DeadlineMissed
+        expr: vouch_oldest_job_age_seconds > 3600
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: 'Oldest job is {{ $value | humanizeDuration }} old'
+
+      # Proofs are the expensive resource. Proofs-per-fact drifting toward 1.0
+      # means batches are shipping nearly empty, which is the batching argument
+      # quietly failing rather than an outage.
+      - alert: BatchingIneffective
+        expr: vouch_proofs_per_fact > 0.5
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Batching is amortising almost nothing ({{ $value }} proofs per fact)'
+
+      - alert: IndexerLagging
+        expr: vouch_indexer_blocks_behind > 5000
+        for: 20m
+        labels:
+          severity: warning
+        annotations:
+          summary: 'Indexer is {{ $value }} blocks behind the confirmed head'
