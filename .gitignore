@@ -8,3 +8,6 @@ broadcast/
 dist/
 .turbo/
 coverage/
+
+.vercel
+.env*.local
