@@ -1,0 +1,45 @@
+# Relayer, on Fly.
+#
+# One machine, not a fleet. The relayer is deliberately single-writer per
+# deployment: two instances scanning the same range would build the same batches
+# (the packer is a pure function of its input, which is what makes a competing
+# relayer safe) and the loser would revert on the on-chain replay guard. Safe,
+# but it spends a proof to learn nothing, and proofs are the expensive resource.
+#
+# Scale it out only by giving each instance a disjoint block range.
+
+app = "vouch-relayer"
+primary_region = "iad"
+
+[build]
+  dockerfile = "../docker/relayer.Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8080"
+  # Two minutes to fill a batch, then ship regardless. See the deadline policy:
+  # being late is recoverable, being early has already spent the proof.
+  RELAYER_URGENCY = "standard"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Never scale to zero. A relayer that sleeps is a relayer that is not
+  # discovering facts, and nothing wakes it because nothing is calling it.
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    # Liveness only. A readiness check here would restart the process on a
+    # database blip, which does not fix the database and does lose the
+    # in-flight queue.
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

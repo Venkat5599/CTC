@@ -1,0 +1,33 @@
+# Indexer, on Fly.
+#
+# Safe to restart at any moment. It holds no queue and its cursor lives in
+# Postgres, and every pass re-reads an overlap behind that cursor precisely so a
+# restart loses nothing.
+
+app = "vouch-indexer"
+primary_region = "iad"
+
+[build]
+  dockerfile = "../docker/indexer.Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "8081"
+
+[http_service]
+  internal_port = 8081
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "30s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

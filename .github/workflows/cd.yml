@@ -1,0 +1,258 @@
+name: CD
+
+# Continuous deployment.
+#
+# Split from ci.yml because the two answer different questions. CI asks whether
+# the code is correct; CD asks whether it is live. Merging them would mean every
+# green test run tried to deploy, and every deployment failure looked like a
+# test failure.
+#
+# What deploys automatically and what does not is a deliberate line:
+#
+#   Frontends deploy on merge. They are stateless, versioned, and a bad one is
+#   rolled back by redeploying the previous commit.
+#
+#   Service images build and publish on merge, but nothing restarts on its own.
+#   The relayer holds a queue and a cursor; restarting it mid-batch is safe but
+#   not free, and the operator should choose when.
+#
+#   CONTRACTS NEVER DEPLOY FROM HERE. They are immutable once deployed and
+#   source registration writes trust decisions that fail silently when wrong.
+#   That lives in deploy.yml behind a manual trigger and a typed confirmation.
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # One deployment per branch at a time. Two racing deploys of the same app
+  # produce a live version that matches neither commit.
+  group: cd-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Gate. Nothing deploys off a red build.
+  # ---------------------------------------------------------------------------
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install --no-audit --no-fund
+
+      # The security suite specifically, not just the full run. If S1, S2 or S3
+      # regressed, the thing about to go live does not do what its own
+      # documentation says it does.
+      - name: Security invariants
+        run: forge test --match-path "packages/contracts/test/Security.t.sol" -vv
+
+      - name: Contracts
+        run: forge test
+
+      - name: Services and packages
+        run: |
+          npm --prefix packages/proof-engine run test
+          npm --prefix packages/attestcoin run test
+          npm --prefix packages/sdk run test
+          npm --prefix services/relayer run test
+          npm --prefix services/worker run test
+
+      - name: Integration
+        run: npm --prefix tests/integration run test
+
+  # ---------------------------------------------------------------------------
+  # Frontends. Vercel, one project per app.
+  # ---------------------------------------------------------------------------
+  frontends:
+    name: ${{ matrix.app }}
+    needs: gate
+    runs-on: ubuntu-latest
+    # Skipped entirely when Vercel is not configured, rather than failing. A
+    # fork or a fresh clone should get a green CD run that deploys nothing, not
+    # a red one complaining about a secret it was never given.
+    if: vars.VERCEL_ENABLED == 'true'
+    environment:
+      name: ${{ github.event_name == 'pull_request' && 'preview' || 'production' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app: web
+            project_id_secret: VERCEL_PROJECT_ID_WEB
+          - app: explorer
+            project_id_secret: VERCEL_PROJECT_ID_EXPLORER
+          - app: docs
+            project_id_secret: VERCEL_PROJECT_ID_DOCS
+          - app: demo-credit
+            project_id_secret: VERCEL_PROJECT_ID_DEMO
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # A pull request gets a preview URL; master gets production. Same command,
+      # different target, so the path that ships is the path that was rehearsed
+      # on every PR rather than a separate one nobody exercises.
+      - name: Pull Vercel environment
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          vercel pull --yes \
+            --environment=${{ github.event_name == 'pull_request' && 'preview' || 'production' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          vercel build ${{ github.event_name != 'pull_request' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
+        run: |
+          url=$(vercel deploy --prebuilt ${{ github.event_name != 'pull_request' && '--prod' || '' }} \
+            --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "::notice title=${{ matrix.app }}::$url"
+
+      # A deployment that returns a 500 is not a deployment. Checked here rather
+      # than discovered by a visitor.
+      - name: Smoke test the deployed URL
+        run: |
+          for attempt in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.url }}" || true)
+            if [ "$code" = "200" ]; then
+              echo "OK: $code"
+              exit 0
+            fi
+            echo "attempt $attempt: HTTP $code"
+            sleep 6
+          done
+          echo "::error title=${{ matrix.app }}::Deployed but not serving 200."
+          exit 1
+
+  # ---------------------------------------------------------------------------
+  # Service images. Built and published; not restarted.
+  # ---------------------------------------------------------------------------
+  images:
+    name: image ${{ matrix.service }}
+    needs: gate
+    # Images are published from master only. A PR proves the Dockerfile builds
+    # in the job below without pushing a tag nobody asked for.
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [relayer, indexer]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          tags: |
+            type=sha,format=long
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/${{ matrix.service }}.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Report
+        run: |
+          echo "::notice title=${{ matrix.service }}::Published. Nothing restarted -- roll it out when the queue is quiet."
+
+  # ---------------------------------------------------------------------------
+  # On a PR, prove the images build without publishing them.
+  # ---------------------------------------------------------------------------
+  image-build-check:
+    name: image builds (${{ matrix.service }})
+    needs: gate
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [relayer, indexer]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: infra/docker/${{ matrix.service }}.Dockerfile
+          push: false
+          cache-from: type=gha
+
+  # ---------------------------------------------------------------------------
+  # What actually went live.
+  # ---------------------------------------------------------------------------
+  summary:
+    name: summary
+    needs: [frontends, images]
+    if: always() && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Write summary
+        run: |
+          {
+            echo "## Deployment"
+            echo
+            echo "| Target | Result |"
+            echo "|---|---|"
+            echo "| Frontends | ${{ needs.frontends.result }} |"
+            echo "| Service images | ${{ needs.images.result }} |"
+            echo
+            echo "Contracts are **not** deployed by this workflow. Source"
+            echo "registration writes trust decisions that fail silently when"
+            echo "wrong, so it stays behind the manual trigger in \`deploy.yml\`."
+          } >> "$GITHUB_STEP_SUMMARY"

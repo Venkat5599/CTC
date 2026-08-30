@@ -17,6 +17,7 @@
  */
 
 export { Relayer, type RelayerDeps, type RelayerOptions } from './main.js';
+export { bootstrap, main } from './bootstrap.js';
 export { BatchQueue, type QueuedJob } from './scheduler/queue.js';
 export * from './scheduler/batcher.js';
 export * from './scheduler/deadline.js';
