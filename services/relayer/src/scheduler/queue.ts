@@ -103,11 +103,15 @@ export class BatchQueue {
   /** Jobs ready to send: full, past deadline, or over their ship threshold. */
   ready(): QueuedJob[] {
     const now = this.now();
-    const runnable = eligible(
-      [...this.jobs.values()],
-      (job) => (job as QueuedJob).nextRetryAt,
-      now,
-    ) as QueuedJob[];
+
+    // Exhausted jobs are excluded here rather than by their retry time. They
+    // carry `nextRetryAt: null`, which means "no backoff pending" and would
+    // otherwise read as eligible -- so an exhausted job would be retried
+    // forever, the exact opposite of what a retry budget is for. The null is
+    // right (there is no next retry) and the filter belongs here.
+    const live = [...this.jobs.values()].filter((job) => job.attempts < job.maxAttempts);
+
+    const runnable = eligible(live, (job) => (job as QueuedJob).nextRetryAt, now) as QueuedJob[];
 
     return runnable.filter((job) => shouldShip(job, now).ship);
   }
