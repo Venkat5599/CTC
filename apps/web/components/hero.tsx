@@ -1,9 +1,10 @@
 "use client";
 
 import { LogoLoop, type LogoItem } from "@/components/logo-loop";
+import { RegistryDashboard } from "@/components/registry-dashboard";
+import { heroConfig } from "@/lib/config";
 import { ArrowDownRight } from "lucide-react";
 import { motion, useMotionValue, useSpring } from "motion/react";
-import Image from "next/image";
 import { useRef, type ReactNode, type MouseEvent } from "react";
 
 const ease = [0.23, 1, 0.32, 1] as const;
@@ -113,7 +114,7 @@ export function Hero(): ReactNode {
             variants={fadeInUp}
             transition={{ duration: 0.8, ease }}
           >
-            Now Available
+            {heroConfig.badge}
             <span className="text-accent">✦</span>
           </motion.div>
 
@@ -123,14 +124,17 @@ export function Hero(): ReactNode {
               variants={fadeInUp}
               transition={{ duration: 0.8, ease }}
             >
-              Build Faster
+              {heroConfig.headline.line1}
             </motion.span>
             <motion.span
               className="block"
               variants={fadeInUp}
               transition={{ duration: 0.8, ease }}
             >
-              Ship with <span className="italic font-serif text-accent">Confidence</span>
+              {heroConfig.headline.line2}{" "}
+              <span className="italic font-serif text-accent">
+                {heroConfig.headline.accent}
+              </span>
             </motion.span>
           </h1>
 
@@ -139,11 +143,11 @@ export function Hero(): ReactNode {
             variants={fadeInUp}
             transition={{ duration: 0.8, ease }}
           >
-            The modern platform for teams who want to move fast without breaking things
+            {heroConfig.subheadline}
           </motion.p>
 
-          <motion.button
-            type="button"
+          <motion.a
+            href={heroConfig.cta.href}
             className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
             variants={fadeInScale}
             transition={{ duration: 0.8, ease }}
@@ -151,11 +155,11 @@ export function Hero(): ReactNode {
             whileTap={{ scale: 0.98 }}
           >
             <span className="absolute right-0 inset-y-0 w-[calc(100%-2rem)] max-[850px]:w-full rounded-xl bg-accent" />
-            <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">Get Started</span>
+            <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">{heroConfig.cta.text}</span>
             <span className="relative -left-px z-10 w-11 h-11 rounded-xl flex items-center justify-center text-black">
               <ArrowDownRight className="w-5 h-5 transition-transform duration-300 group-hover:-rotate-45" />
             </span>
-          </motion.button>
+          </motion.a>
         </motion.div>
       </div>
 
@@ -167,16 +171,9 @@ export function Hero(): ReactNode {
       >
         <div className="relative max-w-5xl mx-auto">
           <div 
-            className="relative dark:mix-blend-darken rounded-2xl overflow-hidden border border-neutral-200 shadow-2xl/5 mask-[linear-gradient(to_bottom,black_50%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_50%,transparent_100%)]"
+            className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl/20 mask-[linear-gradient(to_bottom,black_72%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_bottom,black_72%,transparent_100%)]"
           >
-            <Image
-              src="/dashboardmock.png"
-              alt="Dashboard preview"
-              width={1920}
-              height={1080}
-              className="w-full h-auto invert dark:invert-0 dark:contrast-100 contrast-125"
-              priority
-            />
+            <RegistryDashboard />
           </div>
         </div>
       </motion.div>
