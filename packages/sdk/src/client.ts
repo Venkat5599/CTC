@@ -15,9 +15,9 @@
  * be granted access to.
  */
 
-import { Registry } from './registry.js';
-import { PassportReader } from './passport.js';
-import { createRelayerClient, type RelayerClient } from './verification.js';
+import { Registry } from './registry';
+import { PassportReader } from './passport';
+import { createRelayerClient, type RelayerClient } from './verification';
 import type {
   Address,
   Hex,
@@ -25,8 +25,8 @@ import type {
   Standing,
   VerifiedFact,
   VouchClientConfig,
-} from './types.js';
-import { VouchError } from './types.js';
+} from './types';
+import { VouchError } from './types';
 
 export interface VouchClientOptions extends VouchClientConfig {
   /** Relayer base URL. Only needed to observe verification progress. */

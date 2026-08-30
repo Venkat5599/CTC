@@ -8,9 +8,9 @@
  * forcing either through the other's shape would make one of them worse.
  */
 
-import type { Address, Passport, ReadContract, Tier } from './types.js';
-import { TIER_NAMES, VouchError } from './types.js';
-import type { Registry } from './registry.js';
+import type { Address, Passport, ReadContract, Tier } from './types';
+import { TIER_NAMES, VouchError } from './types';
+import type { Registry } from './registry';
 
 export const PASSPORT_ABI = [
   {

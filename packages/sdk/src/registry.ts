@@ -14,8 +14,8 @@
  * standing from an event log.
  */
 
-import type { Address, Hex, ReadContract, Standing, VerifiedFact } from './types.js';
-import { VouchError } from './types.js';
+import type { Address, Hex, ReadContract, Standing, VerifiedFact } from './types';
+import { VouchError } from './types';
 
 /** Minimal ABI: only what the SDK reads. Kept narrow so a contract change that
  *  matters here fails loudly rather than being absorbed by an over-broad ABI. */

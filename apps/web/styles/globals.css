@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+@import '@vouch/ui/tokens.css';
+
+/*
+ * Page-level type. Geist for text, Geist Mono for anything the protocol says
+ * literally -- addresses, fact types, gas figures, code. The mono is not a
+ * costume here: every string it carries is genuinely data.
+ */
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-base);
+  color: var(--color-ink);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Links in prose get an underline that does not animate on hover. A growing
+   underline is a template tic; the colour shift is enough. */
+.prose-link {
+  border-bottom: 1px solid var(--color-line-strong);
+  transition: border-color 150ms, color 150ms;
+}
+.prose-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}

@@ -1,0 +1,94 @@
+/**
+ * Vouch design tokens.
+ *
+ * One palette, locked. The page is dark and stays dark: no section inverts to a
+ * light surface mid-scroll. Sections vary by elevation within the same family,
+ * never by flipping mode.
+ *
+ * The accent is a single desaturated cyan. Not because cyan is fashionable but
+ * because the one thing this interface has to communicate is the difference
+ * between PROVEN and UNKNOWN, and that distinction deserves the only saturated
+ * colour on the page. Everything else is neutral so the accent means something
+ * when it appears.
+ *
+ * Deliberately not purple, not a blue-to-violet gradient, and not a glow.
+ */
+
+@theme {
+  /* Surfaces. Off-black, never #000, so depth is possible. */
+  --color-base: #0b0d0e;
+  --color-surface: #121516;
+  --color-raised: #191d1f;
+  --color-overlay: #22282a;
+
+  /* Hairlines. Self-coloured, felt more than seen. */
+  --color-line: #262c2e;
+  --color-line-strong: #333b3e;
+
+  /* Ink. */
+  --color-ink: #e8ecec;
+  --color-ink-muted: #9aa4a6;
+  --color-ink-faint: #6b7679;
+
+  /* The accent. Used only for proven standing and primary action. */
+  --color-accent: #4dd4c4;
+  --color-accent-dim: #2a8478;
+  --color-accent-ink: #04211d;
+
+  /* Semantic. Standing is proven or unknown, never good or bad -- absence of a
+     proof is not evidence of anything, so "unknown" is neutral, not a warning. */
+  --color-proven: #4dd4c4;
+  --color-unknown: #6b7679;
+  --color-rejected: #d97757;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+
+  --radius-sm: 4px;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+
+/**
+ * One radius system: 8px for surfaces, 4px for small controls, 12px for panels.
+ * No pills anywhere. A pill button on a page of square panels is broken design,
+ * and this protocol is not a consumer app.
+ */
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background: var(--color-base);
+  color: var(--color-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Focus is visible and uses the accent, because keyboard navigation is not a
+   second-class path. */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--color-accent-dim);
+  color: var(--color-ink);
+}
+
+/**
+ * Everything below this line collapses under reduced motion. Nothing on this
+ * site depends on animation to become readable -- content is visible by default
+ * and motion only ever adds emphasis to something already on screen.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -8,7 +8,7 @@
  */
 
 import { keccak256, toHex } from 'viem';
-import type { Hex } from './types.js';
+import type { Hex } from './types';
 
 export {
   AAVE_REPAYMENT,

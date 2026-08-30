@@ -14,8 +14,8 @@
  * someone what is happening while they wait.
  */
 
-import type { Address, Hex } from './types.js';
-import { VouchError } from './types.js';
+import type { Address, Hex } from './types';
+import { VouchError } from './types';
 
 /**
  * Where a fact is in the pipeline:
