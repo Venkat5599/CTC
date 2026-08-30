@@ -58,8 +58,12 @@ export function StandingRow({
   label: string;
   meaning: string;
   state: StandingState;
-  count?: number;
-  value?: string;
+  // Explicitly `| undefined` rather than only optional. Under
+  // exactOptionalPropertyTypes a caller passing an undefined count is a type
+  // error unless the property admits it, and callers legitimately do: standing
+  // for an unproven address has no count to pass.
+  count?: number | undefined;
+  value?: string | undefined;
 }) {
   return (
     <div className="grid grid-cols-1 gap-3 border-t border-[--color-line] py-6 md:grid-cols-[1fr_auto] md:items-baseline md:gap-8">

@@ -77,8 +77,15 @@ export const TIER_NAMES: Record<Tier, string> = {
 export interface VouchClientConfig {
   /** Deployed VouchRegistry. */
   registry: Address;
-  /** Deployed VouchPassport. Optional: the registry alone answers hasProof. */
-  passport?: Address;
+  /**
+   * Deployed VouchPassport. Optional: the registry alone answers hasProof.
+   *
+   * Explicitly `| undefined` so a caller can pass through a value that may not
+   * be deployed yet. `DEPLOYED` reports null for an undeployed contract rather
+   * than a zero address, and a consumer forwarding that should not have to
+   * branch before constructing a client.
+   */
+  passport?: Address | undefined;
   /** A viem PublicClient, or anything with the same readContract shape. */
   publicClient: ReadContract;
 }

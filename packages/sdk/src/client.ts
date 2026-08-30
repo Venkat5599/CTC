@@ -30,7 +30,7 @@ import { VouchError } from './types';
 
 export interface VouchClientOptions extends VouchClientConfig {
   /** Relayer base URL. Only needed to observe verification progress. */
-  relayerUrl?: string;
+  relayerUrl?: string | undefined;
 }
 
 export class VouchClient {
