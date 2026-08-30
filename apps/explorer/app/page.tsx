@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heading, Metric, Section, Empty } from '@vouch/ui';
+import { SectionHeading, Metric, Section, Empty } from '@vouch/ui';
 import { REGISTERED_FACTS } from '@vouch/schemas';
 import { addresses, isDeployed } from '@/lib/contracts';
 
@@ -18,9 +18,9 @@ export default function ExplorerHome() {
   return (
     <>
       <Section>
-        <Heading lead="Every fact in the registry, with the source transaction it was drawn from and the verification that recorded it. Nothing here asks to be believed.">
+        <SectionHeading lead="Every fact in the registry, with the source transaction it was drawn from and the verification that recorded it. Nothing here asks to be believed.">
           Explorer
-        </Heading>
+        </SectionHeading>
       </Section>
 
       <Section className="border-t border-[--color-line]">
@@ -42,9 +42,9 @@ export default function ExplorerHome() {
       </Section>
 
       <Section className="border-t border-[--color-line]">
-        <Heading lead="A fact type is a contract, an event signature and the topic that carries the subject. Adding one is a registry entry rather than a code change, which is the property that makes this infrastructure rather than an application.">
+        <SectionHeading lead="A fact type is a contract, an event signature and the topic that carries the subject. Adding one is a registry entry rather than a code change, which is the property that makes this infrastructure rather than an application.">
           Registered facts
-        </Heading>
+        </SectionHeading>
 
         <div className="mt-12">
           {REGISTERED_FACTS.map((fact) => (
@@ -80,7 +80,7 @@ export default function ExplorerHome() {
 
       <Section className="border-t border-[--color-line]">
         <div className="max-w-[58ch]">
-          <Heading>Contracts</Heading>
+          <SectionHeading>Contracts</SectionHeading>
           <dl className="mt-8">
             {Object.entries(addresses).map(([name, value]) => (
               <div

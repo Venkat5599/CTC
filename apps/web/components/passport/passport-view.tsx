@@ -9,7 +9,7 @@
  * can open on a block explorer.
  */
 
-import { Empty, Metric, Panel, Skeleton, StandingRow, Action } from '@vouch/ui';
+import { Empty, Metric, Panel, Skeleton, StandingRow, Pill } from '@vouch/ui';
 import { REGISTERED_FACTS } from '@vouch/schemas';
 import { useStanding } from '@/hooks/useFacts';
 import { usePassport } from '@/hooks/usePassport';
@@ -40,7 +40,7 @@ export function PassportView({ address }: { address: string }) {
         // read as a verdict. This address simply has not been proven, which is
         // the default state of every address on earth.
         body="This address has no proofs in the registry. That is not a judgement about it: Vouch can only ever prove that something happened, never that it did not."
-        action={<Action href="/verify">Prove a fact</Action>}
+        action={<Pill href="/verify">Prove a fact</Pill>}
       />
     );
   }

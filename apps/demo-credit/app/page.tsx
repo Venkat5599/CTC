@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAccount, useConnect } from 'wagmi';
-import { Heading, Metric, Panel, Section, StandingBadge } from '@vouch/ui';
+import { SectionHeading, Metric, Panel, Section, StandingBadge } from '@vouch/ui';
 
 /**
  * A lending market that reads Vouch.
@@ -39,9 +39,9 @@ export default function DemoCredit() {
     <>
       <Section>
         <div className="flex flex-wrap items-baseline justify-between gap-6">
-          <Heading lead="An independent lending market. It reads the Vouch registry through the same public view functions any contract can call, holds no privileged relationship with it, and was never registered anywhere.">
+          <SectionHeading lead="An independent lending market. It reads the Vouch registry through the same public view functions any contract can call, holds no privileged relationship with it, and was never registered anywhere.">
             Borrow against what you have already done
-          </Heading>
+          </SectionHeading>
 
           {!isConnected && connectors[0] ? (
             <button
@@ -108,9 +108,9 @@ export default function DemoCredit() {
 
       <Section className="border-t border-[--color-line]">
         <div className="max-w-[58ch]">
-          <Heading lead="Everything above comes from one function. There is no scoring service, no snapshot, no signature from an off-chain underwriter, and no integration agreement with anybody.">
+          <SectionHeading lead="Everything above comes from one function. There is no scoring service, no snapshot, no signature from an off-chain underwriter, and no integration agreement with anybody.">
             What this application actually does
-          </Heading>
+          </SectionHeading>
 
           <div className="mt-8 overflow-hidden rounded-[--radius] border border-[--color-line] bg-[--color-surface]">
             <pre className="overflow-x-auto p-5 font-mono text-[13px] leading-[1.7] text-[--color-ink-muted]">

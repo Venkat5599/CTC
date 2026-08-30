@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heading, Section, Snippet } from '@vouch/ui';
+import { SectionHeading, Section, Snippet } from '@vouch/ui';
 
 /**
  * Documentation.
@@ -41,9 +41,9 @@ export default function DocsHome() {
 
         <div className="pb-24">
           <Section className="!px-0 !pt-20">
-            <Heading lead="Vouch proves facts about activity on other chains. It does not decide what they mean: whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
+            <SectionHeading lead="Vouch proves facts about activity on other chains. It does not decide what they mean: whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
               Integrating Vouch
-            </Heading>
+            </SectionHeading>
           </Section>
 
           <section id="install" className="border-t border-[--color-line] py-14">

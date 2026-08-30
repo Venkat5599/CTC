@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Heading, Section, Empty, Action } from '@vouch/ui';
+import { SectionHeading, Section, Empty, Pill } from '@vouch/ui';
 import { PassportView } from '@/components/passport/passport-view';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -14,9 +14,9 @@ export default function PassportPage() {
 
   return (
     <Section>
-      <Heading lead="Standing is public. Any address can be looked up by anyone, because a fact proven on chain is not a private one.">
+      <SectionHeading lead="Standing is public. Any address can be looked up by anyone, because a fact proven on chain is not a private one.">
         Passport
-      </Heading>
+      </SectionHeading>
 
       <form
         className="mt-10 flex flex-col gap-3 sm:flex-row"
@@ -61,7 +61,7 @@ export default function PassportPage() {
                   Connect wallet
                 </button>
               ) : (
-                <Action href="/proofs">Browse proven facts</Action>
+                <Pill href="/proofs">Browse proven facts</Pill>
               )
             }
           />

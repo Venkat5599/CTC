@@ -1,6 +1,6 @@
 'use client';
 
-import { Action, Empty, Heading, Section } from '@vouch/ui';
+import { Pill, Empty, SectionHeading, Section } from '@vouch/ui';
 import { CreditTerms } from '@/components/dashboard/credit-terms';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -9,9 +9,9 @@ export default function CreditPage() {
 
   return (
     <Section>
-      <Heading lead="A reference consumer, not the product. VouchCredit reads the registry through the same public view functions any third party would call, and holds no privileged relationship with it.">
+      <SectionHeading lead="A reference consumer, not the product. VouchCredit reads the registry through the same public view functions any third party would call, and holds no privileged relationship with it.">
         Credit
-      </Heading>
+      </SectionHeading>
 
       <div className="mt-12">
         {isConnected && address ? (
@@ -30,7 +30,7 @@ export default function CreditPage() {
                   Connect wallet
                 </button>
               ) : (
-                <Action href="/apps">See how consumers read the registry</Action>
+                <Pill href="/apps">See how consumers read the registry</Pill>
               )
             }
           />

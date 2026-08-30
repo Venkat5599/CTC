@@ -115,48 +115,45 @@ jobs:
       # A pull request gets a preview URL; master gets production. Same command,
       # different target, so the path that ships is the path that was rehearsed
       # on every PR rather than a separate one nobody exercises.
-      - name: Pull Vercel environment
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
-        run: |
-          vercel pull --yes \
-            --environment=${{ github.event_name == 'pull_request' && 'preview' || 'production' }} \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
-      - name: Build
-        env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
-        run: |
-          vercel build ${{ github.event_name != 'pull_request' && '--prod' || '' }} \
-            --token=${{ secrets.VERCEL_TOKEN }}
-
+      # Deployed from the REPO ROOT with rootDirectory set on the project, not
+      # from the app directory. These apps resolve @vouch/* through npm
+      # workspace links, so an upload scoped to apps/<name> cannot install them
+      # -- the first attempt failed exactly that way, with npm rejecting a
+      # `cd ../..` that reached outside its own build context.
+      #
+      # Built server-side rather than with --prebuilt, because a local build
+      # would ignore the project's rootDirectory and produce output for the
+      # wrong tree.
       - name: Deploy
         id: deploy
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
         run: |
-          url=$(vercel deploy --prebuilt ${{ github.event_name != 'pull_request' && '--prod' || '' }} \
-            --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --yes             ${{ github.event_name != 'pull_request' && '--prod' || '' }}             --token=${{ secrets.VERCEL_TOKEN }} | tail -1)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "::notice title=${{ matrix.app }}::$url"
 
-      # A deployment that returns a 500 is not a deployment. Checked here rather
-      # than discovered by a visitor.
+      # A status code is not evidence. Every one of these returned HTTP 200 on
+      # its first publish while serving Vercel's login page, because Deployment
+      # Protection is on by default -- so a check that only reads the code would
+      # have passed and reported four working sites. It reads the title instead.
       - name: Smoke test the deployed URL
         run: |
           for attempt in 1 2 3 4 5; do
-            code=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.deploy.outputs.url }}" || true)
-            if [ "$code" = "200" ]; then
-              echo "OK: $code"
+            body=$(curl -sL --max-time 20 "${{ steps.deploy.outputs.url }}" || true)
+            if printf '%s' "$body" | grep -qi '<title>[^<]*Vouch\|<title>[^<]*standing'; then
+              echo "Serving real content."
               exit 0
             fi
-            echo "attempt $attempt: HTTP $code"
-            sleep 6
+            if printf '%s' "$body" | grep -qi 'Login . Vercel'; then
+              echo "::error title=${{ matrix.app }}::Deployment Protection is on. This URL is gated behind a Vercel login."
+              exit 1
+            fi
+            echo "attempt $attempt: not ready"
+            sleep 8
           done
-          echo "::error title=${{ matrix.app }}::Deployed but not serving 200."
+          echo "::error title=${{ matrix.app }}::Deployed but not serving the site."
           exit 1
 
   # ---------------------------------------------------------------------------

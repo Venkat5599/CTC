@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Empty, Heading, Section } from '@vouch/ui';
+import { Empty, SectionHeading, Section } from '@vouch/ui';
 import { FactList } from '@/components/proofs/fact-list';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -14,9 +14,9 @@ export default function ProofsPage() {
 
   return (
     <Section>
-      <Heading lead="Each fact links to the transaction it was drawn from and the verification that recorded it. Nothing here asks to be believed.">
+      <SectionHeading lead="Each fact links to the transaction it was drawn from and the verification that recorded it. Nothing here asks to be believed.">
         Proofs
-      </Heading>
+      </SectionHeading>
 
       <form
         className="mt-10 flex flex-col gap-3 sm:flex-row"

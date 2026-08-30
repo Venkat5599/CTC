@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heading, Section, Snippet } from '@vouch/ui';
+import { SectionHeading, Section, Snippet } from '@vouch/ui';
 
 /**
  * Consumers.
@@ -37,9 +37,9 @@ export default function AppsPage() {
   return (
     <>
       <Section>
-        <Heading lead="Three contracts read the same registry. They share no storage, were never registered with it, and do not know each other exists. The only thing they have in common is an address passed at construction.">
+        <SectionHeading lead="Three contracts read the same registry. They share no storage, were never registered with it, and do not know each other exists. The only thing they have in common is an address passed at construction.">
           One registry, many consumers
-        </Heading>
+        </SectionHeading>
 
         <div className="mt-14">
           {CONSUMERS.map((consumer) => (
@@ -72,9 +72,9 @@ export default function AppsPage() {
 
       <Section className="border-t border-[--color-line]">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
-          <Heading lead="A test asserts it rather than a README claiming it. One proven repayment lowers collateral, opens the access gate, and leaves the exchange fee untouched, because the exchange reads a different fact type entirely.">
+          <SectionHeading lead="A test asserts it rather than a README claiming it. One proven repayment lowers collateral, opens the access gate, and leaves the exchange fee untouched, because the exchange reads a different fact type entirely.">
             Proven in the test suite
-          </Heading>
+          </SectionHeading>
 
           <Snippet caption="test_oneFactThreeUnrelatedConsumers, in Consumers.t.sol.">
 {`_submit(_repayClaim(ALICE, 5_000e6, 25_000_000, "thesis"));
@@ -88,9 +88,9 @@ assertEq(feeTier.feeBpsFor(ALICE), 30);             // unchanged`}
 
       <Section className="border-t border-[--color-line]">
         <div className="max-w-[58ch]">
-          <Heading lead="Nothing needs to be registered with Vouch. A consumer deployed after a fact was proven reads that fact immediately, which is what makes this a primitive rather than a platform with a waiting list.">
+          <SectionHeading lead="Nothing needs to be registered with Vouch. A consumer deployed after a fact was proven reads that fact immediately, which is what makes this a primitive rather than a platform with a waiting list.">
             Building a fourth
-          </Heading>
+          </SectionHeading>
           <div className="mt-8">
             <Link href="/developers" className="prose-link text-[13px] text-[--color-ink-muted]">
               Integration guide

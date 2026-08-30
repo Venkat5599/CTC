@@ -1,6 +1,6 @@
 'use client';
 
-import { Heading, Section, Empty, Action } from '@vouch/ui';
+import { SectionHeading, Section, Empty, Pill } from '@vouch/ui';
 import { REGISTERED_FACTS } from '@vouch/schemas';
 import { Pipeline } from '@/components/verification/pipeline';
 import { useProofStatus } from '@/hooks/useProof';
@@ -12,9 +12,9 @@ export default function VerifyPage() {
 
   return (
     <Section>
-      <Heading lead="Discovery is automatic. The relayer scans the source chain, batches what it finds, and submits. Nothing here needs your signature, and anyone can run a relayer if ours stops.">
+      <SectionHeading lead="Discovery is automatic. The relayer scans the source chain, batches what it finds, and submits. Nothing here needs your signature, and anyone can run a relayer if ours stops.">
         Verification
-      </Heading>
+      </SectionHeading>
 
       <div className="mt-12">
         {!isConnected || !address ? (
@@ -31,7 +31,7 @@ export default function VerifyPage() {
                   Connect wallet
                 </button>
               ) : (
-                <Action href="/passport">Look up an address instead</Action>
+                <Pill href="/passport">Look up an address instead</Pill>
               )
             }
           />
@@ -53,7 +53,7 @@ export default function VerifyPage() {
           <Empty
             title="Nothing in flight"
             body="No facts for this address are currently being proven. If you have activity on a registered source, the relayer will find it on its next pass."
-            action={<Action href="/passport">See current standing</Action>}
+            action={<Pill href="/passport">See current standing</Pill>}
           />
         )}
       </div>

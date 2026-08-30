@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Heading, Section, Snippet } from '@vouch/ui';
+import { SectionHeading, Section, Snippet } from '@vouch/ui';
 
 /**
  * Integration guide.
@@ -13,16 +13,16 @@ export default function DevelopersPage() {
   return (
     <>
       <Section>
-        <Heading lead="Vouch proves facts. It does not decide what they mean. Whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
+        <SectionHeading lead="Vouch proves facts. It does not decide what they mean. Whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
           Integrate
-        </Heading>
+        </SectionHeading>
       </Section>
 
       <Section className="border-t border-[--color-line]">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-          <Heading lead="One interface, one view call. No registration, no allowlist, no key.">
+          <SectionHeading lead="One interface, one view call. No registration, no allowlist, no key.">
             On chain
-          </Heading>
+          </SectionHeading>
 
           <Snippet caption="Any Creditcoin contract. Nothing else is required.">
 {`import {IVouchRegistry} from "vouch/interfaces/IVouchRegistry.sol";
@@ -45,9 +45,9 @@ contract YourProtocol {
 
       <Section className="border-t border-[--color-line]">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-          <Heading lead="The SDK returns standing as proven or unknown rather than a boolean, so an unproven address cannot be silently rendered as a negative one.">
+          <SectionHeading lead="The SDK returns standing as proven or unknown rather than a boolean, so an unproven address cannot be silently rendered as a negative one.">
             Off chain
-          </Heading>
+          </SectionHeading>
 
           <Snippet caption="@vouch/sdk. The client holds no key and sends no transaction.">
 {`import { createVouchClient, AAVE_REPAYMENT } from '@vouch/sdk';
@@ -68,7 +68,7 @@ if (standing.state === 'proven') {
 
       <Section className="border-t border-[--color-line]">
         <div className="max-w-[62ch]">
-          <Heading>Three things worth knowing before you ship</Heading>
+          <SectionHeading>Three things worth knowing before you ship</SectionHeading>
 
           <div className="mt-8 space-y-8">
             <div>
