@@ -1,0 +1,9 @@
+# Placeholder.
+#
+# Frontend lives here. Not started -- PRD milestone day 13, and the ARCHITECTURE
+# build priority is explicit that the SDK, docs site and explorer wait until the
+# P0 proof flow is green: real Ethereum event -> real Attestcoin proof -> real
+# Creditcoin contract -> real Vouch fact.
+#
+# Git will not track an empty directory, so this file exists to keep the
+# workspace layout in pnpm-workspace.yaml resolvable on a fresh clone.

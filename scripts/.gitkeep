@@ -1,0 +1,6 @@
+# Placeholder.
+#
+# Repo-level operational scripts. Contract deploy scripts are Foundry scripts and
+# live at packages/contracts/script/ instead.
+#
+# Git will not track an empty directory, so this file keeps the path present.
