@@ -1,0 +1,13 @@
+{
+  "name": "vouch",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Portable On-Chain Standing. Attestcoin proves the fact. Vouch makes the fact reusable.",
+  "scripts": {
+    "build:contracts": "forge build",
+    "test:contracts": "forge test -vv"
+  },
+  "dependencies": {
+    "@gluwa/usc-contracts": "^0.2.0"
+  }
+}

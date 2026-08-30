@@ -1,0 +1,17 @@
+[profile.default]
+src = "packages/contracts/src"
+test = "packages/contracts/test"
+out = "packages/contracts/out"
+libs = ["node_modules", "lib"]
+solc_version = "0.8.28"
+optimizer = true
+optimizer_runs = 200
+via_ir = true
+fs_permissions = [{ access = "read", path = "./tests/fixtures" }]
+
+[rpc_endpoints]
+creditcoin_testnet = "https://rpc.cc3-testnet.creditcoin.network"
+ethereum_mainnet = "${ETH_MAINNET_RPC}"
+
+[profile.default.fuzz]
+runs = 512

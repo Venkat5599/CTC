@@ -1,0 +1,11 @@
+node_modules/
+out/
+cache/
+broadcast/
+.env
+.env.local
+*.log
+dist/
+.turbo/
+coverage/
+lib/forge-std/
