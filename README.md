@@ -71,6 +71,23 @@ Vouch verifies once and stores canonically. The first consumer pays; **every sub
 
 ---
 
+## Live
+
+| | |
+|---|---|
+| Site | https://vouch-registry.vercel.app |
+| Explorer | https://vouch-explorer.vercel.app |
+| Docs | https://vouch-protocol-docs.vercel.app |
+| Demo lending market | https://vouch-demo-credit.vercel.app |
+
+The demo market is a separate deployment on purpose. The argument for a shared
+registry only lands if the consumer looks like somebody else's product, which it
+is: no shared storage, no registration, no privileged relationship. Just an
+address and a view call.
+
+Contracts are not yet deployed, so every surface reads an empty registry and
+says so plainly rather than showing invented data.
+
 ## Status
 
 | Component | State |
