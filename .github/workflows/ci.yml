@@ -82,6 +82,33 @@ jobs:
       - name: Submission stays permissionless
         run: forge test --match-test "test_anySenderCanSubmit" -vv
 
+  services:
+    name: services
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [relayer, indexer]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        working-directory: services/${{ matrix.service }}
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        working-directory: services/${{ matrix.service }}
+        run: npm run typecheck
+
+      # The indexer has no test script yet; its behaviour is network-bound and
+      # is covered by the packer and proof-request suites downstream of it.
+      - name: Test
+        working-directory: services/${{ matrix.service }}
+        run: npm run test --if-present
+
   secrets:
     name: no committed secrets
     runs-on: ubuntu-latest

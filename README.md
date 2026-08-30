@@ -75,13 +75,29 @@ Vouch verifies once and stores canonically. The first consumer pays; **every sub
 
 | Component | State |
 |---|---|
-| `VouchRegistry` (ASC) | Implemented, compiles |
-| `VouchPassport` | Implemented, compiles |
-| `VouchCredit` (reference consumer) | Implemented, compiles |
-| Security: S1 / S2 / S3 | Implemented — tests pending |
-| Relayer + batch packer | Not started |
+| `VouchRegistry` (ASC) | Implemented, 52 contract tests passing |
+| `VouchPassport` | Implemented, tested |
+| `VouchCredit` (consumer 1 — lending) | Implemented, tested |
+| `VouchFeeTier` (consumer 2 — DEX fees) | Implemented, tested |
+| `VouchAccess` (consumer 3 — access gate) | Implemented, tested |
+| Security: S1 / S2 / S3 | Implemented, 21 tests proving each attack is rejected |
+| Deploy + source-config scripts | Implemented, dry-run clean |
+| CI (build, fmt, S1/S2/S3, secret scan) | Implemented |
+| Gas benchmark | Implemented — numbers below |
+| Batch packer | Implemented, 13 tests |
+| Proof-request pipeline | Implemented, 7 tests |
+| Indexer | Implemented, typechecked — not yet run against mainnet |
 | Deployment to CC3 Testnet | Not started |
-| Benchmark harness | Not started |
+| Frontend | Not started |
+
+**Measured gas.** A consumer read is flat at **~1,202 gas** regardless of how
+many consumers came before it, and 75 consumer reads trigger **zero** precompile
+calls. On batching, the honest result is narrower than the pitch: with a *dense*
+continuity proof batching is a wash and measured ~0.7% worse, because each claim
+still runs its own decode and its own precompile call. It wins only with a
+*sparse* proof — ~1,000 roots, which is what proving history older than roughly a
+day actually requires — where the shared array is copied once instead of ten
+times: ~8% execution and **6.8x** transaction cost. See `test/Gas.t.sol`.
 
 Building in the open. See [docs/PRD.md](docs/PRD.md) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
