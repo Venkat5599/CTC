@@ -31,7 +31,7 @@ export function Providers({ children }: { children: ReactNode }): ReactNode {
             refetchOnWindowFocus: false,
           },
         },
-      }),
+      })
   );
 
   return (

@@ -1,145 +1,124 @@
 "use client";
 
-import { motion } from "motion/react";
-import { Check } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
-const plans = [
+import { metricsConfig, pricingConfig } from "@/lib/config";
+
+/**
+ * What it costs.
+ *
+ * The template shipped three pricing tiers. Vouch does not have tiers, or a
+ * subscription, or a plan to sell -- it is a registry anyone can read. So the
+ * slot keeps its position in the page and carries the thing a reader in a
+ * pricing frame of mind actually wants: the measured cost of using it.
+ *
+ * Every figure comes from Gas.t.sol. The comparison row is the honest one --
+ * verification is genuinely expensive, and the argument is not that Vouch made
+ * it cheap but that it made it happen once.
+ */
+
+const COMPARISON = [
   {
-    name: "Starter",
-    price: 24,
-    monthlyPrice: 40,
-    description: "Perfect for small teams getting started",
-    features: ["2 Team Members", "10GB Storage", "Basic Analytics", "Email Support"],
-    popular: false,
+    label: "Verifying a fact",
+    cost: "~120,000 gas",
+    who: "Paid once, by whoever submits it",
+    accent: false,
   },
   {
-    name: "Premium",
-    price: 99,
-    monthlyPrice: 120,
-    description: "Best for growing teams with advanced needs",
-    features: ["10 Team Members", "50GB Storage", "Advanced Analytics", "Priority Support"],
-    popular: true,
-  },
-  {
-    name: "Enterprise",
-    price: 125,
-    monthlyPrice: 150,
-    description: "For large organizations requiring scale",
-    features: ["Unlimited Members", "2TB Storage", "Custom Integrations", "Dedicated Support"],
-    popular: false,
+    label: "Reading a fact",
+    cost: "1,202 gas",
+    who: "Paid by every consumer, forever",
+    accent: true,
   },
 ];
 
-const ease = [0.23, 1, 0.32, 1] as const;
-
-function PricingCard({
-  plan,
-  index,
-}: {
-  plan: (typeof plans)[0];
-  index: number;
-}): ReactNode {
-  const isPopular = plan.popular;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ duration: 0.6, ease, delay: index * 0.1 }}
-      className="relative"
-    >
-      {isPopular && (
-        <div className="absolute -inset-1 rounded-[1.2em] bg-accent" aria-hidden="true" />
-      )}
-      
-      <div
-        className={`relative flex h-full flex-col rounded-2xl bg-frame p-6 sm:p-8 ${
-          isPopular ? "" : "border border-border"
-        }`}
-      >
-        {isPopular && (
-          <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-            <span className="inline-block rounded-full bg-accent px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-black/50">
-              Most Popular
-            </span>
-          </div>
-        )}
-
-        <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
-
-        <div className="mt-4">
-          <div className="flex items-end gap-3">
-            <span className="text-5xl font-bold tracking-tight text-foreground">
-              ${plan.price}
-            </span>
-            <span className="mb-1 text-sm text-muted-foreground">/month</span>
-          </div>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Billed annually, or ${plan.monthlyPrice}/mo billed monthly
-          </p>
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold transition-colors ${
-            isPopular
-              ? "bg-foreground text-background hover:bg-foreground/90"
-              : "bg-muted text-foreground hover:bg-muted/80"
-          }`}
-        >
-          Get Started
-        </motion.button>
-
-        <div className="mt-8">
-          <p className="text-sm font-medium text-muted-foreground">Includes:</p>
-          <ul className="mt-4 space-y-3">
-            {plan.features.map((feature) => (
-              <li key={feature} className="flex items-center gap-3">
-                <Check
-                  className="h-4 w-4 shrink-0 text-foreground"
-                  strokeWidth={2.5}
-                />
-                <span className="text-sm text-foreground">{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
 export function Pricing(): ReactNode {
-  return (
-    <section id="pricing" className="w-full bg-background px-6 py-20 sm:py-28 scroll-mt-24">
-      <div className="mx-auto max-w-5xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, ease }}
-          className="mb-12 text-center sm:mb-16"
-        >
-          <span className="text-sm font-medium text-muted-foreground">
-            Pricing
-          </span>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl lg:text-5xl">
-            Simple, transparent pricing
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            Choose the plan that works best for your team. All plans include a
-            14-day free trial.
-          </p>
-        </motion.div>
+  const reduce = useReducedMotion();
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-          {plans.map((plan, index) => (
-            <PricingCard key={plan.name} plan={plan} index={index} />
+  return (
+    <section className="border-t border-border px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto w-full max-w-[1120px]">
+        <div className="mx-auto max-w-[58ch] text-center">
+          <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-medium leading-[1.12] tracking-[-0.025em]">
+            {pricingConfig.title}
+          </h2>
+          <p className="mx-auto mt-5 max-w-[54ch] text-[15px] leading-relaxed text-muted-foreground">
+            {pricingConfig.description}
+          </p>
+        </div>
+
+        <div className="mt-16 grid gap-5 md:grid-cols-2">
+          {COMPARISON.map((row, i) => (
+            <motion.div
+              key={row.label}
+              initial={reduce ? false : { opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className={
+                row.accent
+                  ? "rounded-4xl bg-accent p-8 text-black md:p-10"
+                  : "rounded-4xl border border-border bg-card-secondary p-8 md:p-10"
+              }
+            >
+              <div
+                className={
+                  row.accent
+                    ? "text-[14px] text-black/70"
+                    : "text-[14px] text-muted-foreground"
+                }
+              >
+                {row.label}
+              </div>
+
+              <div className="mt-4 font-mono text-[clamp(2rem,4vw,2.75rem)] leading-none tracking-tight tabular-nums">
+                {row.cost}
+              </div>
+
+              <div
+                className={
+                  row.accent
+                    ? "mt-5 text-[14px] text-black/70"
+                    : "mt-5 text-[14px] text-muted-foreground"
+                }
+              >
+                {row.who}
+              </div>
+            </motion.div>
           ))}
         </div>
+
+        <div className="mt-14 grid gap-10 border-t border-border pt-14 md:grid-cols-3">
+          {metricsConfig.map((metric) => (
+            <div key={metric.label}>
+              <div className="flex items-baseline gap-2.5">
+                <span className="font-mono text-[clamp(1.75rem,3.5vw,2.5rem)] leading-none tracking-tight tabular-nums">
+                  {metric.value}
+                </span>
+                {metric.unit ? (
+                  <span className="text-[13px] text-muted-foreground">{metric.unit}</span>
+                ) : null}
+              </div>
+              <div className="mt-3 text-[14px]">{metric.label}</div>
+              <p className="mt-2 max-w-[38ch] text-[13px] leading-relaxed text-muted-foreground">
+                {metric.note}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <p className="mt-12 text-center text-[13px] text-muted-foreground">
+          {pricingConfig.billingNote}.{" "}
+          <Link
+            href="https://github.com/Venkat5599/CTC/blob/master/docs/benchmarks/results.md"
+            className="underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
+          >
+            Method and caveats
+          </Link>
+          .
+        </p>
       </div>
     </section>
   );

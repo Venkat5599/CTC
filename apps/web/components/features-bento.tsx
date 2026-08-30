@@ -2,21 +2,32 @@
 
 import { motion, type Transition } from "motion/react";
 import { CircleCheck, Star } from "lucide-react";
-import Image from "next/image";
 import type { ReactNode } from "react";
 
 const EASE = [0.23, 1, 0.32, 1] as const;
 
-const AVATAR_URLS = [
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face",
-  "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face",
-];
+/**
+ * Source chains, not people.
+ *
+ * The template stacked four stock headshots here, which reads as a user base.
+ * Vouch does not have one yet, and implying otherwise on a protocol whose
+ * argument is "stop taking claims on trust" is the one mistake that would cost
+ * the reader's belief in every measured number further down the page.
+ */
+const SOURCE_CHAINS = [
+  ["ethereum", "Ethereum"],
+  ["polygon", "Polygon"],
+  ["arbitrum", "Arbitrum"],
+  ["optimism", "Optimism"],
+] as const;
 
+/**
+ * Measured, not invented. Both figures come from Gas.t.sol, and the second is
+ * the one the whole registry exists to make true.
+ */
 const DEPLOYMENT_STATS = [
-  { icon: "🚀", label: "2,598 Deploys", change: "+24%" },
-  { icon: "⚡", label: "99.9% Uptime", change: "+0.2%" },
+  { icon: "●", label: "1,202 gas per read", change: "flat" },
+  { icon: "●", label: "0 precompile calls", change: "per read" },
 ];
 
 const cardAnimation = {
@@ -65,22 +76,24 @@ function PhoneMockup({
 function AvatarStack(): ReactNode {
   return (
     <div className="flex items-center">
-      {AVATAR_URLS.map((src, i) => (
+      {SOURCE_CHAINS.map(([slug, name]) => (
         <div
-          key={i}
-          className="size-12 rounded-full border-2 border-white/25 overflow-hidden -ml-4 first:ml-0"
+          key={slug}
+          className="size-12 rounded-full border-2 border-white/25 bg-black/40 overflow-hidden -ml-4 first:ml-0 flex items-center justify-center"
+          title={name}
         >
-          <Image
-            src={src}
-            alt=""
-            width={48}
-            height={48}
-            className="size-full object-cover"
+          <img
+            src={`https://cdn.simpleicons.org/${slug}/ffffff`}
+            alt={name}
+            width={22}
+            height={22}
+            className="size-[22px] opacity-90"
+            loading="lazy"
           />
         </div>
       ))}
-      <div className="size-12 rounded-full border-2 border-white/25 bg-accent text-black flex items-center justify-center text-sm font-semibold -ml-4">
-        5+
+      <div className="size-12 rounded-full border-2 border-white/25 bg-accent text-black flex items-center justify-center text-xs font-semibold -ml-4">
+        +more
       </div>
     </div>
   );
@@ -125,10 +138,10 @@ function StepByStepCard(): ReactNode {
     >
       <div className="relative z-10 text-center mb-6 transition-transform duration-500 ease-out group-hover:scale-105">
         <h3 className="text-2xl md:text-4xl font-medium text-neutral-900 leading-tight mb-3">
-          Guided Onboarding For Every Team
+          One proof, read by every application
         </h3>
         <p className="text-neutral-700 text-sm">
-          Get your team up and running in minutes with step-by-step walkthroughs
+          Prove an address once on any supported chain, and every Creditcoin application can read it
         </p>
       </div>
 
@@ -136,10 +149,10 @@ function StepByStepCard(): ReactNode {
         <PhoneMockup variant="full">
           <div className="absolute inset-0 bg-phone-screen pt-14 px-5">
             <h4 className="text-3xl font-medium text-neutral-900 leading-none tracking-tight mt-4">
-              Your workspace
+              Verify once.
             </h4>
             <h4 className="text-3xl font-medium text-neutral-900 leading-none tracking-tight mb-4">
-              is ready!
+              Reuse forever.
             </h4>
             <p className="text-sm text-neutral-500 leading-snug mb-8">
               Invite your team and start collaborating instantly.
@@ -207,7 +220,7 @@ function DashboardCard(): ReactNode {
     >
       <div className="relative z-10 max-w-48 transition-transform duration-500 ease-out group-hover:scale-105">
         <h3 className="text-xl md:text-2xl whitespace-nowrap font-medium text-card-foreground leading-tight mb-3">
-          Real-time Data
+          Verified facts
         </h3>
         <p className="text-card-foreground-muted text-sm">
           Monitor metrics, analytics, and team activity instantly
@@ -220,10 +233,10 @@ function DashboardCard(): ReactNode {
         <PhoneMockup variant="compact">
           <div className="absolute inset-0 bg-phone-screen pt-9 px-3">
             <div className="bg-white rounded-full px-2 py-1.5 mb-3 flex items-center gap-1.5 border border-neutral-200">
-              <span className="text-neutral-400 text-xs">Search projects...</span>
+              <span className="text-neutral-400 text-xs">Search an address...</span>
             </div>
-            <p className="text-xs text-neutral-500 mb-0.5">Active projects</p>
-            <p className="text-xl font-medium text-neutral-900 mb-3">24 running</p>
+            <p className="text-xs text-neutral-500 mb-0.5">Registered sources</p>
+            <p className="text-xl font-medium text-neutral-900 mb-3">3 fact types</p>
 
             <div className="flex gap-1.5 mb-4">
               <span className="bg-accent text-black text-xs px-2.5 py-1 rounded-full">
@@ -237,11 +250,11 @@ function DashboardCard(): ReactNode {
 
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-neutral-900 rounded-2xl px-5 py-3 shadow-xl z-20 whitespace-nowrap">
           <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-neutral-400 text-xs">Build status</span>
+            <span className="text-neutral-400 text-xs">Test suite</span>
             <span className="text-neutral-500 text-xs">ⓘ</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-lg font-medium text-white">All passing</span>
+            <span className="text-lg font-medium text-white">142 passing</span>
             <span className="text-xs font-medium text-accent bg-accent/20 px-2 py-0.5 rounded">
               ✓ 100%
             </span>
@@ -261,10 +274,10 @@ function TrustedByCard(): ReactNode {
     >
       <div className="transition-transform duration-500 ease-out group-hover:scale-110">
         <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-1">
-          Trusted By
+          Proven by
         </h3>
         <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-5">
-          254k+ Users
+          142 tests
         </h3>
       </div>
 
@@ -289,7 +302,7 @@ function IntegrationsCard(): ReactNode {
     >
       <div className="mb-auto transition-transform duration-500 ease-out group-hover:scale-105">
         <h3 className="text-xl md:text-2xl font-medium text-neutral-900 leading-tight mb-2">
-          Built to Scale
+          Permissionless
         </h3>
         <p className="text-neutral-700 text-sm">
           Enterprise-ready infrastructure that grows with you

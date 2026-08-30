@@ -1,111 +1,106 @@
 "use client";
 
-import { useRef } from "react";
-import { motion, useScroll, useTransform } from "motion/react";
-import { CalendarCheck, Users, Rocket } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import type { ReactNode } from "react";
 
-const steps = [
+import { howItWorksConfig } from "@/lib/config";
+
+/**
+ * How a fact becomes standing.
+ *
+ * The actual pipeline, named honestly: an Ethereum event is discovered,
+ * batched, proven through Attestcoin, and written once. Everything after that
+ * is a view call.
+ *
+ * The last step carries the weight. Steps one through four happen once and cost
+ * money; step five happens forever and costs a storage read. That asymmetry is
+ * the entire reason the registry exists, so the layout gives it its own row
+ * rather than burying it as a fifth equal item.
+ */
+
+const STEPS = [
   {
-    icon: CalendarCheck,
-    title: "Schedule kickoff",
-    description:
-      "Align on scope, structure, and timeline. Whether it's a quick setup or a full migration, we'll take it from there.",
+    n: "01",
+    title: "Discovery",
+    body: "The indexer watches a registered source contract on Ethereum and finds qualifying events. It decides nothing; everything it reports is re-derived on chain before it counts.",
   },
   {
-    icon: Users,
-    title: "Real-time collaboration",
-    description:
-      "Work alongside our team with full visibility. Every step follows best practices and thorough QA to ensure quality.",
+    n: "02",
+    title: "Batching",
+    body: "Claims sharing a chain, a 1000-block window and a deadline are grouped. Nothing requires them to belong to the same user, which is what lets ten strangers' facts ride one proof.",
   },
   {
-    icon: Rocket,
-    title: "Launch and scale",
-    description:
-      "Go live with confidence. Our AI continuously learns and improves, helping your team scale effortlessly.",
+    n: "03",
+    title: "Proof",
+    body: "Attestcoin proves the transaction was included in a block belonging to the confirmed source chain. It proves nothing else, which is why the next step exists.",
+  },
+  {
+    n: "04",
+    title: "Verification",
+    body: "The registry checks the receipt succeeded, that the log came from the pinned emitter, and that this exact log has not been consumed before. Then it writes.",
   },
 ];
 
-function StepItem({
-  step,
-  isLast,
-}: {
-  step: (typeof steps)[0];
-  isLast: boolean;
-}): ReactNode {
-  const Icon = step.icon;
-
-  return (
-    <div className={`relative flex gap-5 ${isLast ? "" : "pb-64"}`}>
-      <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent" aria-hidden="true">
-        <Icon className="h-5 w-5 text-black" strokeWidth={2} />
-      </div>
-
-      <div className="pt-1">
-        <h3 className="text-xl font-semibold text-foreground sm:text-2xl">
-          {step.title}
-        </h3>
-        <p className="mt-2 max-w-sm text-base leading-relaxed text-foreground/60">
-          {step.description}
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export function HowItWorks(): ReactNode {
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start 0.3", "end 0.7"],
-  });
-
-  const lineHeight = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+  const reduce = useReducedMotion();
 
   return (
-    <section
-      ref={containerRef}
-      className="relative w-full bg-background"
-    >
-      <div className="mx-auto grid max-w-5xl gap-12 px-6 py-20 sm:py-28 lg:grid-cols-2 lg:gap-20">
-        <div className="lg:sticky lg:top-48 lg:h-fit lg:self-start">
-          <h2 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            How it works
+    <section className="px-6 py-24 md:px-10 md:py-32">
+      <div className="mx-auto w-full max-w-[1120px]">
+        <div className="max-w-[52ch]">
+          <h2 className="text-[clamp(1.75rem,4vw,2.75rem)] font-medium leading-[1.12] tracking-[-0.025em]">
+            {howItWorksConfig.title}
           </h2>
-          <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/60">
-            Your platform, configured by experts and launched on an{" "}
-            <span className="font-medium text-foreground">Enterprise plan</span>
-            , ready to grow with you.
+          <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
+            {howItWorksConfig.description}
           </p>
-          <motion.a
-            href="#"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="mt-8 inline-flex items-center rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-foreground/90"
-          >
-            Schedule kickoff
-          </motion.a>
         </div>
 
-        <div className="relative">
-          <div className="absolute left-6 top-6 h-[calc(100%-6rem)] w-0.5 -translate-x-1/2 bg-foreground/10" aria-hidden="true">
+        <div className="mt-16 grid gap-x-10 gap-y-12 md:grid-cols-2 lg:grid-cols-4">
+          {STEPS.map((step, i) => (
             <motion.div
-              style={{ height: lineHeight, willChange: "height" }}
-              className="w-full bg-accent"
-            />
-          </div>
+              key={step.n}
+              initial={reduce ? false : { opacity: 0, y: 14 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.4 }}
+              transition={{ duration: 0.5, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="font-mono text-[13px] text-accent">{step.n}</div>
+              <h3 className="mt-4 text-[17px] font-medium tracking-[-0.01em]">
+                {step.title}
+              </h3>
+              <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
+                {step.body}
+              </p>
+            </motion.div>
+          ))}
+        </div>
 
-          <ol className="relative list-none p-0 m-0">
-            {steps.map((step, index) => (
-              <li key={step.title}>
-                <StepItem
-                  step={step}
-                  isLast={index === steps.length - 1}
-                />
-              </li>
-            ))}
-          </ol>
+        {/* Given its own row because it is the asymmetry the whole design turns
+            on: everything above happens once, this happens forever. */}
+        <div className="mt-16 rounded-4xl border border-border bg-card-secondary p-8 md:p-12">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div>
+              <div className="font-mono text-[13px] text-accent">05</div>
+              <h3 className="mt-4 text-[clamp(1.25rem,2.5vw,1.75rem)] font-medium tracking-[-0.02em]">
+                Every read after that is a storage slot
+              </h3>
+              <p className="mt-4 max-w-[62ch] text-[15px] leading-relaxed text-muted-foreground">
+                Steps one through four happen once and cost a proof. This one
+                happens forever and costs 1,202 gas. The first consumer pays for
+                verification; every consumer after that reads what it already
+                bought.
+              </p>
+            </div>
+
+            <Link
+              href={howItWorksConfig.cta.href}
+              className="inline-flex shrink-0 items-center justify-center rounded-full bg-accent px-6 py-3 text-[14px] font-medium text-black transition-opacity hover:opacity-90"
+            >
+              {howItWorksConfig.cta.text}
+            </Link>
+          </div>
         </div>
       </div>
     </section>

@@ -4,18 +4,34 @@ import { ArrowDownRight, ChevronDown } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState, type ReactNode } from "react";
 
+/**
+ * Navigation.
+ *
+ * Every entry points at a route that exists. The template shipped Analytics,
+ * Automation, Integrations and Case Studies -- all of them dead links to pages
+ * that were never built, which is the fastest way to make a site feel like a
+ * mockup.
+ */
 const menus = {
   products: [
-    { label: "Analytics", description: "Track your metrics in real-time" },
-    { label: "Automation", description: "Streamline your workflows" },
-    { label: "Integrations", description: "Connect with 100+ tools" },
-    { label: "API", description: "Build custom solutions" },
+    { label: "Passport", href: "/passport", description: "Standing for any address" },
+    { label: "Proofs", href: "/proofs", description: "Every verified fact, traceable to both chains" },
+    { label: "Consumers", href: "/apps", description: "Three applications, one registry" },
+    { label: "Credit", href: "/credit", description: "Collateral priced from proven history" },
   ],
   resources: [
-    { label: "Documentation", description: "Learn how to get started" },
-    { label: "Blog", description: "Tips and best practices" },
-    { label: "Case Studies", description: "See how others succeed" },
-    { label: "Community", description: "Join the conversation" },
+    { label: "Developers", href: "/developers", description: "Integrate in one view call" },
+    { label: "Verification", href: "/verify", description: "Watch a fact move through the pipeline" },
+    {
+      label: "Threat model",
+      href: "https://github.com/Venkat5599/CTC/blob/master/docs/security/threat-model.md",
+      description: "The three failure modes and their tests",
+    },
+    {
+      label: "Source",
+      href: "https://github.com/Venkat5599/CTC",
+      description: "Contracts, services, and 142 passing tests",
+    },
   ],
 };
 
@@ -72,7 +88,7 @@ function DesktopDropdown({
           >
             <div className="bg-frame border border-border rounded-2xl shadow-lg overflow-hidden p-2">
               {menus[menuKey].map((item) => (
-                <a key={item.label} href="#" className="block px-4 py-3 rounded-xl hover:bg-muted transition-colors">
+                <a key={item.label} href={item.href} className="block px-4 py-3 rounded-xl hover:bg-muted transition-colors">
                   <div className="text-sm font-medium text-foreground">{item.label}</div>
                   <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
                 </a>
@@ -123,7 +139,7 @@ function MobileExpandable({
               {menus[menuKey].map((item) => (
                 <a
                   key={item.label}
-                  href="#"
+                  href="/passport"
                   className="block py-2 text-sm text-foreground/80 hover:text-foreground"
                   onClick={onClose}
                 >
@@ -160,7 +176,7 @@ export function Header(): ReactNode {
       className="fixed shadow-2xl/20 rounded-b-4xl top-2.5 left-1/2 -translate-x-1/2 w-full max-w-5xl max-[1200px]:max-w-2xl bg-frame z-9998 max-[850px]:top-0 max-[850px]:left-0 max-[850px]:right-0 max-[850px]:translate-x-0 max-[850px]:w-full max-[850px]:max-w-none max-[850px]:rounded-none max-[850px]:rounded-b-4xl max-[850px]:overflow-hidden"
     >
       <div className="h-20 max-[850px]:h-18 flex items-center justify-between px-4 max-[850px]:px-6">
-        <a href="#" className="flex items-center gap-2 ml-4 max-[850px]:ml-0">
+        <a href="/" className="flex items-center gap-2 ml-4 max-[850px]:ml-0">
           <div className="w-6 h-6 rounded-full bg-foreground" />
           <span className="text-lg font-semibold text-foreground leading-0 max-[1200px]:hidden max-[850px]:inline">Vouch</span>
         </a>
@@ -186,10 +202,10 @@ export function Header(): ReactNode {
         </nav>
 
         <div className="flex items-center gap-4 max-[850px]:hidden">
-          <a href="#" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+          <a href="/developers" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
             Sign in
           </a>
-          <a href="#" className="group relative inline-flex items-center">
+          <a href="/passport" className="group relative inline-flex items-center">
             <span className="absolute right-0 inset-y-0 w-[calc(100%-1.5rem)] rounded-xl bg-accent" />
             <span className="relative z-10 px-5 py-3 rounded-xl bg-foreground text-background text-sm font-medium">Try for free</span>
             <span className="relative -left-px z-10 w-10 h-10 rounded-xl flex items-center justify-center text-black">
@@ -219,8 +235,8 @@ export function Header(): ReactNode {
           >
             <div className="px-6 pb-4">
               <nav className="space-y-0">
-                <a href="#" className="flex items-center justify-between py-4 text-base font-medium text-foreground border-b border-foreground/10" onClick={closeMobile}>
-                  Customers
+                <a href="/apps" className="flex items-center justify-between py-4 text-base font-medium text-foreground border-b border-foreground/10" onClick={closeMobile}>
+                  Consumers
                 </a>
                 <MobileExpandable
                   label="Products"
@@ -242,10 +258,10 @@ export function Header(): ReactNode {
               </nav>
 
               <div className="flex items-center justify-between pt-8 pb-2">
-                <a href="#" className="text-base font-medium text-foreground" onClick={closeMobile}>
+                <a href="/developers" className="text-base font-medium text-foreground" onClick={closeMobile}>
                   Sign in
                 </a>
-                <a href="#" className="group relative inline-flex items-center" onClick={closeMobile}>
+                <a href="/passport" className="group relative inline-flex items-center" onClick={closeMobile}>
                   <span className="absolute right-0 inset-y-0 w-[calc(100%-1.5rem)] rounded-2xl bg-accent" />
                   <span className="relative z-10 px-5 py-3 rounded-2xl bg-foreground text-background text-sm font-medium">Try for free</span>
                   <span className="relative -left-px z-10 w-10 h-10 rounded-2xl flex items-center justify-center text-foreground">
