@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { Batch } from '../packer/BatchPacker.js';
+import type { Batch } from '@vouch/proof-engine';
 import {
   type ProofBuilderClient,
   ProofBuilderError,
   buildSubmission,
   createProofBuilderClient,
-} from './ProofRequest.js';
+} from './proof-builder.js';
 
 function stubClient(): ProofBuilderClient & { continuityCalls: number; txCalls: number } {
   const client = {

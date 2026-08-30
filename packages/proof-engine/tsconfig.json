@@ -8,13 +8,10 @@
       "DOM"
     ],
     "strict": true,
-    "noUncheckedIndexedAccess": false,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": [
-      "node"
-    ]
+    "types": []
   },
   "include": [
     "src"

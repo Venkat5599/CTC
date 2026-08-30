@@ -19,7 +19,7 @@
  */
 
 import type { Hex } from 'viem';
-import type { Batch, PendingClaim } from '../packer/BatchPacker.js';
+import type { Batch, PendingClaim } from '@vouch/proof-engine';
 
 /** Attestcoin proof-builder, CC3 Testnet. */
 export const DEFAULT_PROOF_BUILDER_URL =

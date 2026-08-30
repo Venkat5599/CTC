@@ -7,7 +7,7 @@ import {
   continuityProofsRequired,
   excludeVerified,
   packBatches,
-} from './BatchPacker.js';
+} from './batcher.js';
 
 const AAVE_REPAYMENT = '0xaaaa' as `0x${string}`;
 const LONG_TERM_LP = '0xbbbb' as `0x${string}`;

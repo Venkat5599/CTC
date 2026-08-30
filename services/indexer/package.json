@@ -4,12 +4,20 @@
   "type": "module",
   "version": "0.1.0",
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:generate": "prisma generate --schema src/database/schema.prisma"
   },
   "dependencies": {
-    "viem": "^2.21.0"
+    "@vouch/config": "*",
+    "@vouch/schemas": "*",
+    "viem": "^2.21.0",
+    "@prisma/client": "^5.20.0"
   },
   "devDependencies": {
-    "typescript": "^5.6.0"
-  }
+    "typescript": "^5.6.0",
+    "@types/node": "^22.7.0",
+    "prisma": "^5.20.0"
+  },
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
 }

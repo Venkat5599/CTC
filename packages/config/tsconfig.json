@@ -1,0 +1,6 @@
+{
+  "extends": "@vouch/tsconfig/base.json",
+  "include": [
+    "src"
+  ]
+}
