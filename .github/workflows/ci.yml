@@ -102,6 +102,7 @@ jobs:
           - apps/explorer
           - apps/docs
           - apps/demo-credit
+          - tests/integration
     steps:
       - uses: actions/checkout@v4
 

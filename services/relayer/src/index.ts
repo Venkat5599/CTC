@@ -16,6 +16,7 @@
  * wallet pays gas; it confers no standing, and a test asserts exactly that.
  */
 
+export { Relayer, type RelayerDeps, type RelayerOptions } from './main.js';
 export { BatchQueue, type QueuedJob } from './scheduler/queue.js';
 export * from './scheduler/batcher.js';
 export * from './scheduler/deadline.js';
