@@ -188,11 +188,11 @@ export interface DeployedAddresses {
  */
 export const DEPLOYED: Record<CreditcoinNetwork, DeployedAddresses> = {
   'cc3-testnet': {
-    registry: null,
-    passport: null,
-    credit: null,
-    feeTier: null,
-    access: null,
+    registry: '0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329',
+    passport: '0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a',
+    credit: '0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622',
+    feeTier: '0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8',
+    access: '0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be',
   },
   'cc3-mainnet': {
     registry: null,

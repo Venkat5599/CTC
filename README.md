@@ -71,6 +71,23 @@ Vouch verifies once and stores canonically. The first consumer pays; **every sub
 
 ---
 
+## Deployed — CC3 Testnet
+
+| Contract | Address |
+|---|---|
+| `VouchRegistry` | [`0xb6e0497d...bbe8329`](https://creditcoin-testnet.blockscout.com/address/0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329) |
+| `VouchPassport` | [`0xbfb2e062...ab7cb20a`](https://creditcoin-testnet.blockscout.com/address/0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a) |
+| `VouchCredit` | [`0x68e495fd...cccb3622`](https://creditcoin-testnet.blockscout.com/address/0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622) |
+| `VouchFeeTier` | [`0xf1ed0bc7...f70f3bd8`](https://creditcoin-testnet.blockscout.com/address/0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8) |
+| `VouchAccess` | [`0x46ecf42f...bd8f64be`](https://creditcoin-testnet.blockscout.com/address/0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be) |
+
+Three fact types registered against Sepolia (`chainKey 1`): Aave `Repay`, Aave
+`Supply`, and Governor `VoteCast`. Read them back yourself:
+
+```bash
+cast call 0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329 "registeredFactTypes()(bytes32[])"   --rpc-url https://rpc.cc3-testnet.creditcoin.network
+```
+
 ## Live
 
 | | |
