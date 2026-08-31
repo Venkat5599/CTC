@@ -11,6 +11,7 @@ import {
 } from "@/components/dashboard/data";
 import { Button, Mono, PageHeader, StatusBadge } from "@/components/dashboard/primitives";
 import { FactList } from "@/components/proofs/fact-list";
+import { ConsumerReads, ProvenAddressHint } from "@/components/vouch/consumer-reads";
 import { NETWORK, addresses, explorerUrl } from "@/lib/contracts";
 import { useWallet } from "@/hooks/useWallet";
 
@@ -111,10 +112,13 @@ export default function ExplorerPage() {
             ) : null
           }
         >
-          <div className="px-6 py-5">
+          <div className="space-y-4 px-6 py-5">
             <AddressField id="explorer-address" onSubmit={setSubject} />
+            {active ? null : <ProvenAddressHint onUse={setSubject} />}
           </div>
         </Section>
+
+        <ConsumerReads subject={active} />
 
         {active ? (
           <FactList address={active} />

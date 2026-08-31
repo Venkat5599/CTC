@@ -13,6 +13,7 @@ import {
   SkeletonRows,
   StatusBadge,
 } from "@/components/dashboard/primitives";
+import { ConsumerReads, ProvenAddressHint } from "@/components/vouch/consumer-reads";
 import { CrossChainPipeline } from "@/components/vouch/pipeline";
 import { useFacts } from "@/hooks/useFacts";
 import { usePassport } from "@/hooks/usePassport";
@@ -111,8 +112,9 @@ export default function DashboardPage() {
             ) : null
           }
         >
-          <div className="px-6 py-5">
+          <div className="space-y-4 px-6 py-5">
             <AddressField id="dashboard-address" onSubmit={setSubject} />
+            {active ? null : <ProvenAddressHint onUse={setSubject} />}
           </div>
         </Section>
       </div>
@@ -166,6 +168,10 @@ export default function DashboardPage() {
             action="View terms"
           />
         </div>
+      </section>
+
+      <section className="mt-4" aria-label="Consumer reads">
+        <ConsumerReads subject={active} />
       </section>
 
       <section className="mt-4" aria-labelledby="activity">
