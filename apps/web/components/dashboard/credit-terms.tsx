@@ -28,7 +28,7 @@ export function CreditTerms({ address, amount = 10_000 }: { address: string; amo
   return (
     <Panel className="p-8">
       <div className="flex items-baseline justify-between gap-6">
-        <div className="text-[13px] text-[--color-ink-muted]">
+        <div className="text-[13px] text-muted-foreground">
           Borrowing {amount.toLocaleString()} USDC
         </div>
         <StandingBadge state={tier > 0 ? 'proven' : 'unknown'}>{TIER_NAMES[tier]}</StandingBadge>
@@ -49,7 +49,7 @@ export function CreditTerms({ address, amount = 10_000 }: { address: string; amo
         />
       </div>
 
-      <p className="mt-8 max-w-[62ch] border-t border-[--color-line] pt-6 text-[13px] leading-relaxed text-[--color-ink-faint]">
+      <p className="mt-8 max-w-[62ch] border-t border-border pt-6 text-[13px] leading-relaxed text-muted-foreground">
         {/* Stated on the screen where it matters most, not only in the docs.
             An underwriter reading tier 0 as a risk signal has misread the
             protocol, and the interface should say so where the decision is

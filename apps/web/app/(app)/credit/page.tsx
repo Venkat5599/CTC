@@ -1,6 +1,7 @@
 'use client';
 
-import { Pill, Empty, SectionHeading } from '@vouch/ui';
+import { Pill, Empty } from '@vouch/ui';
+import { PageHeader } from '@/components/dashboard/primitives';
 import { CreditTerms } from '@/components/dashboard/credit-terms';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -9,9 +10,7 @@ export default function CreditPage() {
 
   return (
     <section>
-      <SectionHeading align="left" lead="A reference consumer, not the product. VouchCredit reads the registry through the same public view functions any third party would call, and holds no privileged relationship with it.">
-        Credit
-      </SectionHeading>
+      <PageHeader label="Consumers" title="Credit" description="Collateral priced from proven standing." />
 
       <div className="mt-12">
         {isConnected && address ? (
@@ -25,7 +24,7 @@ export default function CreditPage() {
                 <button
                   type="button"
                   onClick={connect}
-                  className="rounded-[--radius-sm] bg-[--color-accent] px-4 py-2.5 font-mono text-[13px] text-[--color-accent-ink]"
+                  className="rounded-lg bg-accent px-4 py-2.5 font-mono text-[13px] text-black"
                 >
                   Connect wallet
                 </button>

@@ -1,18 +1,13 @@
 import type { ReactNode } from "react";
 
-import { AppShell } from "@/components/app-shell";
+import { DashboardShell } from "@/components/dashboard/shell";
 
 /**
  * Layout for the application routes.
  *
- * A route group rather than a path segment, so these keep their URLs -- the
- * sidebar is a presentation decision and should not have moved /passport to
- * /app/passport. Links published anywhere still resolve.
+ * A route group rather than a path segment, so /passport stays /passport.
+ * Navigation is a presentation decision and should not have rewritten every URL.
  */
-export default function AppLayout({ children }: { children: ReactNode }): ReactNode {
-  return (
-    <div className="py-10 md:py-14">
-      <AppShell>{children}</AppShell>
-    </div>
-  );
+export default function AppLayout({ children }: { children: ReactNode }) {
+  return <DashboardShell>{children}</DashboardShell>;
 }

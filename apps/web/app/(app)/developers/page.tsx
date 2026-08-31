@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SectionHeading, Snippet } from '@vouch/ui';
+import { PageHeader } from '@/components/dashboard/primitives';
 
 /**
  * Integration guide.
@@ -13,9 +14,7 @@ export default function DevelopersPage() {
   return (
     <>
       <section>
-        <SectionHeading align="left" lead="Vouch proves facts. It does not decide what they mean. Whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
-          Integrate
-        </SectionHeading>
+        <PageHeader label="Build" title="Developers" description="Integrate Vouch in a single view call." />
       </section>
 
       <section className="mt-16 border-t border-border pt-16">
@@ -68,14 +67,14 @@ if (standing.state === 'proven') {
 
       <section className="mt-16 border-t border-border pt-16">
         <div className="max-w-[62ch]">
-          <SectionHeading align="left">Three things worth knowing before you ship</SectionHeading>
+          <PageHeader label="Build" title="Developers" description="Integrate Vouch in a single view call." />
 
           <div className="mt-8 space-y-8">
             <div>
-              <div className="text-[13px] text-[--color-ink]">
+              <div className="text-[13px] text-foreground">
                 An unproven address is unknown, not clean
               </div>
-              <p className="mt-2 text-[13px] leading-relaxed text-[--color-ink-faint]">
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                 Inclusion proofs prove positive facts only. Never read the
                 absence of a proof as evidence of bad behaviour, and never let a
                 low tier deny something a fresh address would have received.
@@ -83,8 +82,8 @@ if (standing.state === 'proven') {
             </div>
 
             <div>
-              <div className="text-[13px] text-[--color-ink]">Standing only rises</div>
-              <p className="mt-2 text-[13px] leading-relaxed text-[--color-ink-faint]">
+              <div className="text-[13px] text-foreground">Standing only rises</div>
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                 The registry is append-only and the passport is a pure function
                 of it, so a tier can never fall. Cache it as long as you like: a
                 stale tier can only ever be too low.
@@ -92,10 +91,10 @@ if (standing.state === 'proven') {
             </div>
 
             <div>
-              <div className="text-[13px] text-[--color-ink]">
+              <div className="text-[13px] text-foreground">
                 chainKey is not chainId
               </div>
-              <p className="mt-2 text-[13px] leading-relaxed text-[--color-ink-faint]">
+              <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
                 Attestcoin keeps its own key space, and the mapping differs per
                 Creditcoin network. Passing the wrong one does not throw; it
                 proves facts about a different chain. Read it from the ChainInfo
@@ -107,19 +106,19 @@ if (standing.state === 'proven') {
           <div className="mt-10 flex flex-wrap gap-6">
             <Link
               href="https://github.com/Venkat5599/CTC/blob/master/docs/architecture/overview.md"
-              className="prose-link text-[13px] text-[--color-ink-muted]"
+              className="prose-link text-[13px] text-muted-foreground"
             >
               Architecture
             </Link>
             <Link
               href="https://github.com/Venkat5599/CTC/blob/master/docs/security/threat-model.md"
-              className="prose-link text-[13px] text-[--color-ink-muted]"
+              className="prose-link text-[13px] text-muted-foreground"
             >
               Threat model
             </Link>
             <Link
               href="https://github.com/Venkat5599/CTC"
-              className="prose-link text-[13px] text-[--color-ink-muted]"
+              className="prose-link text-[13px] text-muted-foreground"
             >
               Source
             </Link>

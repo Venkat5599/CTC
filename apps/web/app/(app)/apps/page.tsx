@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SectionHeading, Snippet } from '@vouch/ui';
+import { PageHeader } from '@/components/dashboard/primitives';
 
 /**
  * Consumers.
@@ -37,31 +38,29 @@ export default function AppsPage() {
   return (
     <>
       <section>
-        <SectionHeading align="left" lead="Three contracts read the same registry. They share no storage, were never registered with it, and do not know each other exists. The only thing they have in common is an address passed at construction.">
-          One registry, many consumers
-        </SectionHeading>
+        <PageHeader label="Consumers" title="Applications" description="Three contracts reading one registry." />
 
         <div className="mt-14">
           {CONSUMERS.map((consumer) => (
             <div
               key={consumer.name}
-              className="grid gap-5 border-t border-[--color-line] py-8 lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1fr)] lg:gap-12"
+              className="grid gap-5 border-t border-border py-8 lg:grid-cols-[minmax(0,0.6fr)_minmax(0,1fr)] lg:gap-12"
             >
               <div>
-                <div className="font-mono text-[13px] text-[--color-ink]">{consumer.name}</div>
-                <div className="mt-1 text-[13px] text-[--color-ink-faint]">{consumer.domain}</div>
+                <div className="font-mono text-[13px] text-foreground">{consumer.name}</div>
+                <div className="mt-1 text-[13px] text-muted-foreground">{consumer.domain}</div>
               </div>
 
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-x-8 gap-y-2 text-[13px]">
-                  <span className="text-[--color-ink-faint]">
-                    Reads <span className="text-[--color-ink-muted]">{consumer.reads}</span>
+                  <span className="text-muted-foreground">
+                    Reads <span className="text-muted-foreground">{consumer.reads}</span>
                   </span>
-                  <span className="text-[--color-ink-faint]">
-                    Grants <span className="text-[--color-ink-muted]">{consumer.grants}</span>
+                  <span className="text-muted-foreground">
+                    Grants <span className="text-muted-foreground">{consumer.grants}</span>
                   </span>
                 </div>
-                <p className="max-w-[58ch] text-[13px] leading-relaxed text-[--color-ink-faint]">
+                <p className="max-w-[58ch] text-[13px] leading-relaxed text-muted-foreground">
                   {consumer.note}
                 </p>
               </div>
@@ -92,7 +91,7 @@ assertEq(feeTier.feeBpsFor(ALICE), 30);             // unchanged`}
             Building a fourth
           </SectionHeading>
           <div className="mt-8">
-            <Link href="/developers" className="prose-link text-[13px] text-[--color-ink-muted]">
+            <Link href="/developers" className="prose-link text-[13px] text-muted-foreground">
               Integration guide
             </Link>
           </div>

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Empty, SectionHeading } from '@vouch/ui';
+import { Empty } from '@vouch/ui';
+import { PageHeader } from '@/components/dashboard/primitives';
 import { FactList } from '@/components/proofs/fact-list';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -14,9 +15,7 @@ export default function ProofsPage() {
 
   return (
     <section>
-      <SectionHeading align="left" lead="Each fact links to the transaction it was drawn from and the verification that recorded it. Nothing here asks to be believed.">
-        Proofs
-      </SectionHeading>
+      <PageHeader label="Registry" title="Proofs" description="Every verified fact, traceable to both chains." />
 
       <form
         className="mt-10 flex flex-col gap-3 sm:flex-row"
@@ -34,11 +33,11 @@ export default function ProofsPage() {
           onChange={(event) => setLookup(event.target.value)}
           placeholder="0x..."
           spellCheck={false}
-          className="w-full rounded-[--radius-sm] border border-[--color-line-strong] bg-[--color-surface] px-4 py-2.5 font-mono text-[13px] text-[--color-ink] placeholder:text-[--color-ink-faint] focus:border-[--color-accent] focus:outline-none sm:max-w-md"
+          className="w-full rounded-lg border border-border bg-card-secondary px-4 py-2.5 font-mono text-[13px] text-foreground placeholder:text-muted-foreground focus:border-muted-foreground focus:outline-none sm:max-w-md"
         />
         <button
           type="submit"
-          className="rounded-[--radius-sm] border border-[--color-line-strong] px-4 py-2.5 font-mono text-[13px] text-[--color-ink-muted] transition-colors hover:border-[--color-ink-faint] hover:text-[--color-ink]"
+          className="rounded-lg border border-border px-4 py-2.5 font-mono text-[13px] text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
         >
           Look up
         </button>

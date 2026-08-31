@@ -24,9 +24,9 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
 
   if (status?.stage === 'rejected') {
     return (
-      <div className="border-t border-[--color-line] py-8">
+      <div className="border-t border-border py-8">
         <StandingBadge state="rejected" />
-        <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-[--color-ink-faint]">
+        <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground">
           {/* A rejection is permanent and the copy says so, because a visitor
               watching a spinner forever is worse than being told to stop. */}
           {status.reason ?? 'This claim cannot be verified and will not be retried.'}
@@ -36,7 +36,7 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
   }
 
   return (
-    <ol className="border-t border-[--color-line]">
+    <ol className="border-t border-border">
       {STAGES.map((stage, i) => {
         const done = currentIndex > i;
         const active = currentIndex === i;
@@ -44,13 +44,13 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
         return (
           <li
             key={stage.key}
-            className="flex items-baseline justify-between gap-6 border-b border-[--color-line] py-4"
+            className="flex items-baseline justify-between gap-6 border-b border-border py-4"
           >
             <span
               className={
                 done || active
-                  ? 'text-[13px] text-[--color-ink]'
-                  : 'text-[13px] text-[--color-ink-faint]'
+                  ? 'text-[13px] text-foreground'
+                  : 'text-[13px] text-muted-foreground'
               }
             >
               {stage.label}
@@ -59,14 +59,14 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
             {active ? (
               <StandingBadge state={stage.key === 'verified' ? 'proven' : 'pending'} />
             ) : done ? (
-              <span className="font-mono text-[12px] text-[--color-ink-faint]">done</span>
+              <span className="font-mono text-[12px] text-muted-foreground">done</span>
             ) : null}
           </li>
         );
       })}
 
       {status?.batchClaimCount != null && status.stage === 'queued' ? (
-        <li className="py-4 text-[13px] text-[--color-ink-faint]">
+        <li className="py-4 text-[13px] text-muted-foreground">
           Batching with {status.batchClaimCount} other claim
           {status.batchClaimCount === 1 ? '' : 's'}. One continuity proof covers
           up to ten, which is why waiting briefly is cheaper than proving alone.

@@ -1,6 +1,7 @@
 'use client';
 
-import { SectionHeading, Empty, Pill } from '@vouch/ui';
+import { Empty, Pill } from '@vouch/ui';
+import { PageHeader } from '@/components/dashboard/primitives';
 import { REGISTERED_FACTS } from '@vouch/schemas';
 import { Pipeline } from '@/components/verification/pipeline';
 import { useProofStatus } from '@/hooks/useProof';
@@ -12,9 +13,7 @@ export default function VerifyPage() {
 
   return (
     <section>
-      <SectionHeading align="left" lead="Discovery is automatic. The relayer scans the source chain, batches what it finds, and submits. Nothing here needs your signature, and anyone can run a relayer if ours stops.">
-        Verification
-      </SectionHeading>
+      <PageHeader label="Registry" title="Verification" description="Watch a fact move through the pipeline." />
 
       <div className="mt-12">
         {!isConnected || !address ? (
@@ -26,7 +25,7 @@ export default function VerifyPage() {
                 <button
                   type="button"
                   onClick={connect}
-                  className="rounded-[--radius-sm] bg-[--color-accent] px-4 py-2.5 font-mono text-[13px] text-[--color-accent-ink]"
+                  className="rounded-lg bg-accent px-4 py-2.5 font-mono text-[13px] text-black"
                 >
                   Connect wallet
                 </button>
@@ -41,7 +40,7 @@ export default function VerifyPage() {
               const fact = REGISTERED_FACTS.find((f) => f.id === status.factType);
               return (
                 <div key={`${status.factType}-${status.txHash}`}>
-                  <div className="mb-4 text-[13px] text-[--color-ink]">
+                  <div className="mb-4 text-[13px] text-foreground">
                     {fact?.label ?? status.factType}
                   </div>
                   <Pipeline status={status} />
