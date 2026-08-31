@@ -4,7 +4,8 @@ import Link from "next/link";
 import type { VerifiedFact } from "@vouch/sdk";
 import { factById } from "@vouch/schemas";
 
-import { Button, Field, Mono, SectionLabel, StatusBadge } from "@/components/dashboard/primitives";
+import { KeyValue } from "@/components/dashboard/data";
+import { Button, Mono } from "@/components/dashboard/primitives";
 import { explorerUrl, sourceExplorerUrl } from "@/lib/contracts";
 
 /**
@@ -23,45 +24,36 @@ export function ProofDetail({ fact }: { fact: VerifiedFact }) {
   const definition = factById(fact.factType);
 
   return (
-    <article className="rounded-xl border border-border bg-card-secondary">
-      <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
-        <div>
-          <SectionLabel className="mb-1">Verified proof</SectionLabel>
-          <h2 className="text-[16px] font-medium text-foreground">
-            {definition?.label ?? "Unknown fact type"}
-          </h2>
-        </div>
-        <StatusBadge status="verified" />
-      </header>
-
-      <dl className="px-5 py-1">
-        <Field label="Source chain">Ethereum Sepolia</Field>
-        <Field label="Block">
+    <article>
+      <dl>
+        <KeyValue label="Fact type">{definition?.label ?? "Unknown fact type"}</KeyValue>
+        <KeyValue label="Source chain">Ethereum Sepolia</KeyValue>
+        <KeyValue label="Block">
           <span className="font-mono tabular-nums">{String(fact.blockNumber)}</span>
-        </Field>
-        <Field label="Transaction">
+        </KeyValue>
+        <KeyValue label="Transaction">
           <Mono value={fact.txHash} />
-        </Field>
-        <Field label="Log index">
+        </KeyValue>
+        <KeyValue label="Log index">
           <span className="font-mono tabular-nums">{fact.logIndex}</span>
-        </Field>
-        <Field label="Event">{definition?.eventSignature ?? "Not recorded"}</Field>
-        <Field label="Emitter">
+        </KeyValue>
+        <KeyValue label="Event">{definition?.eventSignature ?? "Not recorded"}</KeyValue>
+        <KeyValue label="Emitter">
           <Mono value={fact.emitter} />
-        </Field>
-        <Field label="Subject">
+        </KeyValue>
+        <KeyValue label="Subject">
           <Mono value={fact.subject} />
-        </Field>
-        <Field label="Payload hash">
+        </KeyValue>
+        <KeyValue label="Payload hash">
           <Mono value={fact.payloadHash} />
-        </Field>
-        <Field label="Attestation">Verified by Attestcoin</Field>
-        <Field label="Creditcoin">
+        </KeyValue>
+        <KeyValue label="Attestation">Verified by Attestcoin</KeyValue>
+        <KeyValue label="Creditcoin">
           Recorded {fact.verifiedAt.toISOString().slice(0, 10)}
-        </Field>
+        </KeyValue>
       </dl>
 
-      <footer className="flex flex-wrap gap-2 border-t border-border px-5 py-4">
+      <footer className="flex flex-wrap gap-2 border-t border-white/[0.06] px-6 py-4">
         <Button href={sourceExplorerUrl(fact.txHash)} variant="secondary">
           View source transaction
         </Button>
@@ -81,14 +73,14 @@ export function ProofDetail({ fact }: { fact: VerifiedFact }) {
  */
 export function ProofCaveat() {
   return (
-    <p className="mt-4 max-w-[68ch] text-[12px] leading-relaxed text-muted-foreground">
+    <p className="max-w-[70ch] px-1 text-[12px] leading-relaxed text-[var(--vouch-text-muted)]">
       A proof establishes that this event happened. It says nothing about what
       did not happen: Vouch can prove a repayment and can never prove the absence
       of a liquidation, so an address with no proofs is unknown rather than
       clean.{" "}
       <Link
         href="https://github.com/Venkat5599/CTC/blob/master/docs/security/assumptions.md"
-        className="underline decoration-border underline-offset-4 transition-colors hover:text-foreground"
+        className="underline decoration-white/20 underline-offset-4 transition-colors hover:text-[var(--vouch-text)]"
       >
         Assumptions in full
       </Link>

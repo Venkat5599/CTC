@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
 import { features } from "@/lib/config";
@@ -18,9 +19,32 @@ const LENIS_OPTIONS = {
   touchMultiplier: 2,
 };
 
+/**
+ * Routes that must never have their scroll hijacked.
+ *
+ * Momentum scrolling suits a marketing page you read top to bottom. In the
+ * application it fights the user: scanning a table, jumping to a row, landing on
+ * an anchored proof all want the scroll position the operating system gave you,
+ * arriving immediately. Enterprise tools do not animate the scrollbar.
+ */
+const APP_ROUTES = [
+  "/dashboard",
+  "/explorer",
+  "/proofs",
+  "/apps",
+  "/credit",
+  "/developers",
+  "/docs",
+  "/passport",
+  "/verify",
+];
+
 export function SmoothScroll({ children }: { children: ReactNode }): ReactNode {
+  const pathname = usePathname();
+  const isApp = APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+
   useEffect(() => {
-    if (!features.smoothScroll) return;
+    if (!features.smoothScroll || isApp) return;
 
     // Check for reduced motion preference
     const prefersReducedMotion = window.matchMedia(
@@ -60,7 +84,7 @@ export function SmoothScroll({ children }: { children: ReactNode }): ReactNode {
       document.removeEventListener('click', handleAnchorClick);
       lenis.destroy();
     };
-  }, []);
+  }, [isApp]);
 
   return <>{children}</>;
 }

@@ -1,58 +1,69 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Empty } from '@vouch/ui';
-import { PageHeader } from '@/components/dashboard/primitives';
-import { FactList } from '@/components/proofs/fact-list';
-import { useWallet } from '@/hooks/useWallet';
+import { useState } from "react";
 
+import { AddressField, Nothing, Section } from "@/components/dashboard/data";
+import { Button, PageHeader } from "@/components/dashboard/primitives";
+import { FactList } from "@/components/proofs/fact-list";
+import { useWallet } from "@/hooks/useWallet";
+
+/**
+ * Proofs.
+ *
+ * Every verified fact for an address, each one traceable to both chains. This
+ * is the evidence behind the number the passport shows, which is why the two
+ * pages are separate: one answers "what is my standing", this one answers
+ * "why".
+ */
 export default function ProofsPage() {
-  const { address } = useWallet();
-  const [lookup, setLookup] = useState('');
+  const { address, isConnected, connect, canConnect, isConnecting } = useWallet();
   const [subject, setSubject] = useState<string | null>(null);
 
   const active = subject ?? address ?? null;
 
   return (
-    <section>
-      <PageHeader label="Registry" title="Proofs" description="Every verified fact, traceable to both chains." />
+    <>
+      <PageHeader
+        label="Registry"
+        title="Proofs"
+        description="Every verified fact, traceable to the source transaction on one chain and the registry entry on the other."
+      />
 
-      <form
-        className="mt-10 flex flex-col gap-3 sm:flex-row"
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (/^0x[0-9a-fA-F]{40}$/.test(lookup)) setSubject(lookup.toLowerCase());
-        }}
-      >
-        <label htmlFor="proofs-address" className="sr-only">
-          Ethereum address
-        </label>
-        <input
-          id="proofs-address"
-          value={lookup}
-          onChange={(event) => setLookup(event.target.value)}
-          placeholder="0x..."
-          spellCheck={false}
-          className="w-full rounded-lg border border-border bg-card-secondary px-4 py-2.5 font-mono text-[13px] text-foreground placeholder:text-muted-foreground focus:border-muted-foreground focus:outline-none sm:max-w-md"
-        />
-        <button
-          type="submit"
-          className="rounded-lg border border-border px-4 py-2.5 font-mono text-[13px] text-muted-foreground transition-colors hover:border-muted-foreground hover:text-foreground"
+      <div className="space-y-4">
+        <Section
+          title="Look up an address"
+          action={
+            !isConnected && canConnect ? (
+              <Button onClick={connect} disabled={isConnecting} variant="secondary">
+                {isConnecting ? "Connecting…" : "Use my wallet"}
+              </Button>
+            ) : null
+          }
         >
-          Look up
-        </button>
-      </form>
+          <div className="px-6 py-5">
+            <AddressField id="proofs-address" onSubmit={setSubject} />
+          </div>
+        </Section>
 
-      <div className="mt-12">
         {active ? (
           <FactList address={active} />
         ) : (
-          <Empty
-            title="No address selected"
-            body="Paste an address above, or connect a wallet. Proven facts are public and readable by anyone."
-          />
+          <Section title="No address selected">
+            <div className="px-6 py-6">
+              <Nothing
+                action={
+                  <Button href="/explorer" variant="secondary">
+                    Open the explorer
+                  </Button>
+                }
+              >
+                Paste an address above, or connect a wallet. Proven facts are public, so anybody can
+                read anybody&rsquo;s.
+              </Nothing>
+            </div>
+          </Section>
         )}
       </div>
-    </section>
+    </>
   );
 }

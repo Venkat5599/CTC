@@ -8,7 +8,7 @@
  * long this will take, which is the only question they actually have.
  */
 
-import { StandingBadge } from '@vouch/ui';
+import { StatusBadge } from "@/components/dashboard/primitives";
 import type { VerificationStatus } from '@vouch/sdk';
 
 const STAGES = [
@@ -25,7 +25,7 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
   if (status?.stage === 'rejected') {
     return (
       <div className="border-t border-border py-8">
-        <StandingBadge state="rejected" />
+        <StatusBadge status="failed" />
         <p className="mt-3 max-w-[52ch] text-[13px] leading-relaxed text-muted-foreground">
           {/* A rejection is permanent and the copy says so, because a visitor
               watching a spinner forever is worse than being told to stop. */}
@@ -57,7 +57,7 @@ export function Pipeline({ status }: { status: VerificationStatus | null }) {
             </span>
 
             {active ? (
-              <StandingBadge state={stage.key === 'verified' ? 'proven' : 'pending'} />
+              <StatusBadge status={stage.key === 'verified' ? 'verified' : 'pending'} />
             ) : done ? (
               <span className="font-mono text-[12px] text-muted-foreground">done</span>
             ) : null}

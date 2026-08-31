@@ -1,104 +1,127 @@
-'use client';
+"use client";
 
 /**
  * Proven facts for an address.
  *
- * Rows on hairlines rather than a card each. These arrive in lists of ten or
- * more, and a bordered card per row would add ten containers without adding a
- * single unit of hierarchy.
+ * A table, not a list of cards. These arrive ten and twenty at a time and the
+ * columns are the point: which fact, on which chain, in which block. A bordered
+ * card per row would add twenty containers without adding one unit of
+ * hierarchy, and would make the block numbers impossible to compare.
  *
- * Selecting a row opens the full proof in place. The previous version linked
- * each row straight out to a block explorer, which meant leaving the product to
- * inspect the product's own data.
+ * Selecting a row opens the full proof beside the table rather than navigating
+ * away. An earlier version linked each row straight out to a block explorer,
+ * which meant leaving the product in order to inspect the product's own data.
  */
 
-import { useState } from 'react';
+import { useState } from "react";
 
-import {
-  EmptyState,
-  Mono,
-  SectionLabel,
-  SkeletonRows,
-  StatusBadge,
-} from '@/components/dashboard/primitives';
-import { ProofCaveat, ProofDetail } from '@/components/proofs/proof-detail';
-import { useFacts } from '@/hooks/useFacts';
-import { factById } from '@vouch/schemas';
+import { DataTable, Nothing, Section, type Column } from "@/components/dashboard/data";
+import { Mono, SkeletonRows, StatusBadge } from "@/components/dashboard/primitives";
+import { ProofCaveat, ProofDetail } from "@/components/proofs/proof-detail";
+import { useFacts } from "@/hooks/useFacts";
+import { factById } from "@vouch/schemas";
 
 export function FactList({ address }: { address: string }) {
   const { data: facts, isLoading } = useFacts(address);
   const [selected, setSelected] = useState<string | null>(null);
 
-  if (isLoading) return <SkeletonRows rows={4} />;
+  if (isLoading) return <SkeletonRows rows={4} height="h-20" />;
 
-  if (!facts || facts.length === 0) {
-    return (
-      <EmptyState
-        title="No proven facts"
-        description="Nothing has been verified for this address yet. Facts are append-only, so anything proven later joins this list and nothing ever leaves it."
-      />
-    );
-  }
+  const rows = facts ?? [];
+  const active = rows.find((f) => f.factId === selected) ?? null;
 
-  const active = facts.find((f) => f.factId === selected) ?? null;
+  const columns: Column<(typeof rows)[number]>[] = [
+    {
+      key: "fact",
+      header: "Fact",
+      cell: (fact) => {
+        const definition = factById(fact.factType);
+        return (
+          <button
+            type="button"
+            onClick={() => setSelected(fact.factId === selected ? null : fact.factId)}
+            aria-pressed={fact.factId === selected}
+            className="focus-visible:outline-accent text-left focus-visible:outline-2 focus-visible:outline-offset-4"
+          >
+            <span className="block text-[13.5px] text-[var(--vouch-text)]">
+              {definition?.label ?? "Unknown fact type"}
+            </span>
+            <span className="mt-0.5 block text-[12px] text-[var(--vouch-text-muted)]">
+              Ethereum Sepolia
+            </span>
+          </button>
+        );
+      },
+    },
+    {
+      key: "state",
+      header: "State",
+      width: "w-[110px]",
+      cell: () => <StatusBadge status="verified" />,
+    },
+    {
+      key: "block",
+      header: "Block",
+      align: "right",
+      width: "w-[120px]",
+      secondary: true,
+      cell: (fact) => (
+        <span className="font-mono text-[12.5px] tabular-nums text-[var(--vouch-text-muted)]">
+          {String(fact.blockNumber)}
+        </span>
+      ),
+    },
+    {
+      key: "tx",
+      header: "Source transaction",
+      align: "right",
+      width: "w-[160px]",
+      secondary: true,
+      cell: (fact) => <Mono value={fact.txHash} />,
+    },
+  ];
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:items-start">
-      <div>
-        <SectionLabel>Fact history</SectionLabel>
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:items-start">
+      <div className="space-y-4">
+        <Section
+          title="Fact history"
+          description={
+            rows.length > 0
+              ? `${rows.length} proven ${rows.length === 1 ? "fact" : "facts"}, newest first. Select a row to inspect its proof.`
+              : undefined
+          }
+        >
+          <DataTable
+            columns={columns}
+            rows={rows}
+            rowKey={(fact) => fact.factId}
+            empty={
+              <Nothing>
+                Nothing has been verified for this address yet. Facts are append-only, so anything
+                proven later joins this list and nothing ever leaves it.
+              </Nothing>
+            }
+          />
+        </Section>
 
-        <ul className="divide-y divide-border rounded-xl border border-border">
-          {facts.map((fact) => {
-            const definition = factById(fact.factType);
-            const isActive = fact.factId === selected;
-
-            return (
-              <li key={fact.factId}>
-                <button
-                  type="button"
-                  onClick={() => setSelected(isActive ? null : fact.factId)}
-                  aria-pressed={isActive}
-                  className={`flex w-full flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-accent sm:px-5 ${
-                    isActive ? 'bg-muted/50' : 'hover:bg-muted/30'
-                  }`}
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[14px] text-foreground">
-                      {definition?.label ?? 'Unknown fact type'}
-                    </div>
-                    <div className="mt-0.5 text-[12px] text-muted-foreground">
-                      Ethereum Sepolia
-                    </div>
-                  </div>
-
-                  <StatusBadge status="verified" />
-
-                  <div className="hidden text-right sm:block">
-                    <div className="font-mono text-[12px] tabular-nums text-muted-foreground">
-                      Block {String(fact.blockNumber)}
-                    </div>
-                    <div className="mt-0.5">
-                      <Mono value={fact.txHash} />
-                    </div>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-
-        <ProofCaveat />
+        {rows.length > 0 ? <ProofCaveat /> : null}
       </div>
 
-      <div className="lg:sticky lg:top-24">
-        {active ? (
-          <ProofDetail fact={active} />
-        ) : (
-          <EmptyState
-            title="Select a fact"
-            description="Open any row to see the full proof: source chain, block, emitter, and links to both transactions."
-          />
-        )}
+      {/* Sticky so the proof stays in view while a long history scrolls past. */}
+      <div className="lg:sticky lg:top-6">
+        <Section title={active ? "Proof" : "No fact selected"}>
+          {active ? (
+            <ProofDetail fact={active} />
+          ) : (
+            <div className="px-6 py-6">
+              <Nothing>
+                Select any row to see its full proof: source chain, block, emitting contract, and
+                links to both transactions.
+              </Nothing>
+            </div>
+          )}
+        </Section>
       </div>
     </div>
   );

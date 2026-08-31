@@ -317,11 +317,17 @@ export function Skeleton({ className = "" }: { className?: string }) {
   );
 }
 
-export function SkeletonRows({ rows = 3 }: { rows?: number }) {
+export function SkeletonRows({
+  rows = 3,
+  height = "h-16",
+}: {
+  rows?: number;
+  height?: string;
+}) {
   return (
     <div className="space-y-2" aria-busy="true" aria-label="Loading">
       {Array.from({ length: rows }, (_, i) => (
-        <Skeleton key={i} className="h-16 w-full" />
+        <Skeleton key={i} className={`${height} w-full`} />
       ))}
     </div>
   );
