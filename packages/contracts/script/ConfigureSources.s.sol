@@ -48,11 +48,19 @@ import {FactTypes, EventSignatures} from "../src/core/FactTypes.sol";
 ///          packages/contracts/script/ConfigureSources.s.sol:ConfigureSources \
 ///          --rpc-url creditcoin_testnet --broadcast
 contract ConfigureSources is Script {
-    /// @dev Attestcoin key space on CC3 Testnet. 3 = Ethereum Mainnet.
+    /// @dev Attestcoin key space on CC3 Testnet. NOT chainId: 1 is Sepolia and
+    ///      3 is Ethereum Mainnet. Picking the wrong one does not throw -- it
+    ///      credits a different chain's activity as real history.
     uint64 internal constant CHAINKEY_ETHEREUM_MAINNET = 3;
+    uint64 internal constant CHAINKEY_SEPOLIA = 1;
 
     /// @dev Aave V3 Pool proxy, Ethereum mainnet.
     address internal constant AAVE_V3_POOL = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
+
+    /// @dev Aave V3 Pool, Sepolia. A different deployment, so a different
+    ///      address -- reusing the mainnet one would match no logs and the
+    ///      source would look permanently quiet.
+    address internal constant AAVE_V3_POOL_SEPOLIA = 0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951;
 
     uint8 internal constant SUBJECT_TOPIC_INDEX = 2;
 
@@ -64,8 +72,25 @@ contract ConfigureSources is Script {
     /// @dev `voter` is topic 1 in IGovernor.VoteCast.
     uint8 internal constant VOTER_TOPIC_INDEX = 1;
 
+    /**
+     * @notice Register sources for one source chain.
+     *
+     * @dev SOURCE=sepolia registers against Sepolia (chainKey 1); anything else
+     *      registers against Ethereum mainnet (chainKey 3). Both can be run --
+     *      they write different rows, keyed by fact type, so a registry can
+     *      serve a live Sepolia demo and hold proven mainnet history at once.
+     *
+     *      Worth being deliberate about which you run. Sepolia lets you trigger
+     *      a repayment on demand, which is what makes a live demo possible.
+     *      Mainnet is what PRD M1 asks for, and it is read-only and free, so
+     *      running both costs nothing but a second invocation.
+     */
     function run() external {
         address registryAddr = vm.envAddress("VOUCH_REGISTRY_ADDRESS");
+        bool sepolia = keccak256(bytes(vm.envOr("SOURCE", string("mainnet")))) == keccak256("sepolia");
+
+        uint64 chainKey = sepolia ? CHAINKEY_SEPOLIA : CHAINKEY_ETHEREUM_MAINNET;
+        address pool = sepolia ? AAVE_V3_POOL_SEPOLIA : AAVE_V3_POOL;
         uint256 adminKey = vm.envOr("CREDITCOIN_PRIVATE_KEY", uint256(0));
 
         VouchRegistry registry = VouchRegistry(registryAddr);
@@ -78,23 +103,23 @@ contract ConfigureSources is Script {
 
         registry.registerSource(
             FactTypes.AAVE_REPAYMENT,
-            CHAINKEY_ETHEREUM_MAINNET,
-            AAVE_V3_POOL,
+            chainKey,
+            pool,
             EventSignatures.AAVE_REPAY,
             SUBJECT_TOPIC_INDEX
         );
 
         registry.registerSource(
             FactTypes.LONG_TERM_LP,
-            CHAINKEY_ETHEREUM_MAINNET,
-            AAVE_V3_POOL,
+            chainKey,
+            pool,
             EventSignatures.AAVE_SUPPLY,
             SUBJECT_TOPIC_INDEX
         );
 
         registry.registerSource(
             FactTypes.GOVERNANCE_ACTIVITY,
-            CHAINKEY_ETHEREUM_MAINNET,
+            chainKey,
             GOVERNOR,
             EventSignatures.VOTE_CAST,
             VOTER_TOPIC_INDEX
@@ -103,8 +128,9 @@ contract ConfigureSources is Script {
         vm.stopBroadcast();
 
         console2.log("registry        ", registryAddr);
-        console2.log("chainKey        ", CHAINKEY_ETHEREUM_MAINNET);
-        console2.log("emitter         ", AAVE_V3_POOL);
+        console2.log("source          ", sepolia ? "sepolia" : "mainnet");
+        console2.log("chainKey        ", chainKey);
+        console2.log("emitter         ", pool);
         console2.logBytes32(EventSignatures.AAVE_REPAY);
         console2.logBytes32(EventSignatures.AAVE_SUPPLY);
         console2.log("registered fact types:", registry.registeredFactTypes().length);

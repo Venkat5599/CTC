@@ -13,6 +13,41 @@ VOUCH_REGISTRY_ADDRESS=0x... forge script \
   --rpc-url creditcoin_testnet --broadcast
 ```
 
+
+## Choosing a source chain
+
+`ConfigureSources` takes a `SOURCE` flag, and both options can be run against
+the same registry -- they write different rows, so a registry can serve a live
+Sepolia demo and hold proven mainnet history at the same time.
+
+```bash
+# Sepolia (chainKey 1). Lets you trigger a repayment on demand.
+SOURCE=sepolia VOUCH_REGISTRY_ADDRESS=0x... forge script   packages/contracts/script/ConfigureSources.s.sol:ConfigureSources   --rpc-url creditcoin_testnet --broadcast
+
+# Ethereum mainnet (chainKey 3). Read-only, free, and what PRD M1 asks for.
+SOURCE=mainnet VOUCH_REGISTRY_ADDRESS=0x... forge script   packages/contracts/script/ConfigureSources.s.sol:ConfigureSources   --rpc-url creditcoin_testnet --broadcast
+```
+
+### Which to use
+
+**Sepolia** is the demo chain. You control it, so you can borrow and repay on
+camera and watch standing appear, which no amount of pre-proven history conveys
+as well.
+
+**Mainnet** is the credibility chain. Nothing is deployed there and no
+transaction is sent -- the relayer only calls `eth_getLogs`, which is the same
+access a block explorer has. It costs a free-tier RPC key and nothing else.
+
+Running only Sepolia is a defensible choice, but it is worth knowing what it
+gives up: PRD M1 asks for real mainnet history specifically, and a competing
+submission already claims a live testnet loop. Proving a 2023 mainnet repayment
+that the submitter has no control over is the harder claim, and it is the one
+that separates the two.
+
+Note the pool addresses differ between chains. Aave V3 on Sepolia is a separate
+deployment, so reusing the mainnet address would match no logs and the source
+would look permanently quiet rather than misconfigured.
+
 ## Why the split
 
 Everything `ConfigureSources` writes is a trust decision, and every one of them
