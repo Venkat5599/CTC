@@ -30,6 +30,9 @@ abstract contract VouchTestBase is Test {
     address internal constant AAVE_POOL = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
     address internal constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
 
+    /// @dev Compound Governor Bravo, Ethereum mainnet.
+    address internal constant GOVERNOR = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+
     address internal constant ADMIN = address(0xAD814);
     address internal constant ALICE = address(0xA11CE);
     address internal constant BOB = address(0xB0B);

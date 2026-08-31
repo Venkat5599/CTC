@@ -8,7 +8,7 @@ facts. Everything else in the protocol reads it.
 ## Submission is permissionless
 
 `submitBatch` is open to anyone, permanently. The relayer is untrusted and
-affects liveness only — it decides which proofs get submitted and when, so it
+affects liveness only ï¿½ it decides which proofs get submitted and when, so it
 can censor and it can stall, and anyone can run their own if it disappears. It
 cannot forge a fact, because every claim is verified against the precompile and
 re-validated before storage.
@@ -26,7 +26,7 @@ before it reaches review.
 3. **Proof bounds.** Continuity length and transaction size capped before the
    precompile is reached, since both drive gas and both are attacker-supplied.
 4. **Inclusion proof.** The precompile. Proves the transaction is in a block
-   belonging to the confirmed source chain — and nothing else.
+   belonging to the confirmed source chain ï¿½ and nothing else.
 5. **S1.** Receipt status must be 1.
 6. **S2.** The log at the claimed index must carry the registered `topic0` and
    have come from the pinned emitter. Subject and value are read from the
@@ -49,8 +49,8 @@ proof where ten separate integrations would need ten.
 
 ## Monotonicity
 
-No function removes or decrements a fact. Bounds widen — backwards when an older
-fact is discovered late, forwards when a newer one lands — and counts only rise.
+No function removes or decrements a fact. Bounds widen ï¿½ backwards when an older
+fact is discovered late, forwards when a newer one lands ï¿½ and counts only rise.
 The passport reads only the registry and holds no state, so a tier can never
 fall. Structural, not conventional.
 
@@ -65,15 +65,31 @@ registry.registerSource(factType, chainKey, emitter, topic0, subjectTopicIndex);
 ```
 
 That property is what makes Vouch infrastructure rather than an application. It
-is also the most dangerous operation in the system — every field fails silently
+is also the most dangerous operation in the system ï¿½ every field fails silently
 when wrong. See [`../../scripts/deploy/README.md`](../../scripts/deploy/README.md).
 
 ---
 
-## What is not registered, and why
+## Three domains, on purpose
 
-`GOVERNANCE_ACTIVITY` is defined and deliberately excluded. The standard
-OpenZeppelin Governor does not index `voter` in `VoteCast`, so no
-`subjectTopicIndex` can name the subject and registering it would silently pin
-whatever address occupied that topic. Two correct fact types beat three with one
-quietly wrong.
+Credit, liquidity and governance ship in v1. Shipping only repayment history
+would collapse Vouch into a credit score, and the argument for a registry is
+that it is domain-agnostic: a lending market, an exchange and a governance forum
+ask different questions of the same address.
+
+| Fact type | Source | Subject |
+|---|---|---|
+| `AAVE_REPAYMENT` | Aave V3 Pool `Repay` | topic 2, `user` |
+| `LONG_TERM_LP` | Aave V3 Pool `Supply` | topic 2, `onBehalfOf` |
+| `GOVERNANCE_ACTIVITY` | Governor `VoteCast` | topic 1, `voter` |
+
+A previous version of this document claimed governance could not ship because
+the standard Governor does not index `voter`. That was wrong. OpenZeppelin's
+`IGovernor` declares `VoteCast(address indexed voter, ...)`, so the subject is
+readable exactly like the others. The claim was checked against the installed
+contracts and corrected, and three tests now cover the fact type so it cannot
+quietly regress.
+
+One thing governance does differ on: its value word is `proposalId`, not an
+amount. Summing it would be adding identifiers together, so the definition says
+so and no consumer should treat it as a quantity.

@@ -92,17 +92,21 @@ export const LONG_TERM_LP: FactDefinition = {
 };
 
 /**
- * Governor VoteCast. Governance. NOT REGISTERED IN V1.
+ * Governor VoteCast. Governance.
  *
- * Kept here as a definition and deliberately left out of `REGISTERED_FACTS`.
- * The standard OpenZeppelin Governor does not index `voter` in VoteCast, so no
- * `subjectTopicIndex` can name the subject -- the value below is a placeholder
- * that would be WRONG against a stock Governor. Shipping it would pin whatever
- * address happened to occupy that topic.
+ * OpenZeppelin's IGovernor declares:
  *
- * Enabling it requires either a Governor that indexes the voter, or a
- * data-decoding path in SourceValidator. Two correct fact types beat three with
- * one quietly wrong, so it waits.
+ *   event VoteCast(address indexed voter, uint256 proposalId, uint8 support,
+ *                  uint256 weight, string reason)
+ *
+ * `voter` IS indexed, so it sits at topic index 1 and the subject is readable
+ * the same way it is for the Aave sources. An earlier version of this file
+ * claimed otherwise and held the fact type back on that basis; the claim was
+ * checked against the installed contracts and was simply wrong.
+ *
+ * The value word is `proposalId` rather than an amount, which is why
+ * valueMeaning says so: a consumer summing it would be adding proposal
+ * identifiers together and getting a meaningless number.
  */
 export const GOVERNANCE_ACTIVITY: FactDefinition = {
   id: factId('GOVERNANCE_ACTIVITY'),
@@ -113,12 +117,12 @@ export const GOVERNANCE_ACTIVITY: FactDefinition = {
   eventSignature: 'VoteCast(address,uint256,uint8,uint256,string)',
   topic0: topic('VoteCast(address,uint256,uint8,uint256,string)'),
   subjectTopicIndex: 1,
-  valueMeaning: 'Voting weight',
-  valueDecimals: 18,
+  valueMeaning: 'Proposal id. Not an amount -- summing it is meaningless.',
+  valueDecimals: 0,
 };
 
 /** The fact types configured on chain in v1. */
-export const REGISTERED_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP] as const;
+export const REGISTERED_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP, GOVERNANCE_ACTIVITY] as const;
 
 /** Everything defined, including what is not yet safe to register. */
 export const ALL_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP, GOVERNANCE_ACTIVITY] as const;

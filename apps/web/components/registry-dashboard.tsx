@@ -37,7 +37,7 @@ const FACTS = [
   },
   {
     label: "Governance participation",
-    detail: "Not registered · the Governor does not index the voter",
+    detail: "VoteCast(address,uint256,uint8,uint256,string)",
     count: "—",
     proven: false,
   },

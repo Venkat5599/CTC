@@ -6,6 +6,7 @@ import {ReceiptBuilder} from "./helpers/ReceiptBuilder.sol";
 
 import {VouchTypes} from "../src/core/VouchTypes.sol";
 import {FactTypes, EventSignatures} from "../src/core/FactTypes.sol";
+import {VouchErrors} from "../src/core/VouchErrors.sol";
 import {VouchPassport} from "../src/passport/VouchPassport.sol";
 
 /// @title RegistryTest
@@ -227,5 +228,81 @@ contract RegistryTest is VouchTestBase {
             ReceiptBuilder.one(ReceiptBuilder.log(AAVE_POOL, topics, abi.encode(amount, uint16(0))))
         );
         _submit(_claim(FactTypes.LONG_TERM_LP, blockNumber, txHash, 0, encoded));
+    }
+
+    // =====================================================================
+    // Governance (M3): the third domain
+    // =====================================================================
+
+    /// @notice A Governor vote proves standing the same way an Aave event does.
+    /// @dev This fact type was held back for a while on the claim that the
+    ///      standard Governor does not index `voter`. It does --
+    ///      IGovernor declares `VoteCast(address indexed voter, ...)` -- so the
+    ///      subject sits at topic 1 and nothing special is required. The test
+    ///      exists because the claim was wrong once and should not be able to
+    ///      become wrong again silently.
+    function test_governanceVoteProvesStanding() public {
+        vm.prank(ADMIN);
+        registry.registerSource(
+            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
+        );
+
+        _submitVote(ALICE, 42, 33_000_000, keccak256("gov1"));
+
+        assertTrue(registry.hasProof(ALICE, FactTypes.GOVERNANCE_ACTIVITY), "vote proves standing");
+        assertEq(registry.proofCount(ALICE, FactTypes.GOVERNANCE_ACTIVITY), 1);
+    }
+
+    /// @notice Governance standing does not leak into credit or liquidity.
+    function test_governanceIsItsOwnDomain() public {
+        vm.prank(ADMIN);
+        registry.registerSource(
+            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
+        );
+
+        _submitVote(ALICE, 7, 33_000_010, keccak256("gov2"));
+
+        assertTrue(registry.hasProof(ALICE, FactTypes.GOVERNANCE_ACTIVITY));
+        assertFalse(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "a vote is not a repayment");
+        assertFalse(registry.hasProof(ALICE, FactTypes.LONG_TERM_LP), "a vote is not liquidity");
+    }
+
+    /// @notice S2 still applies: a vote from an unregistered Governor is rejected.
+    function test_governanceSpoofedGovernorIsRejected() public {
+        vm.prank(ADMIN);
+        registry.registerSource(
+            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
+        );
+
+        bytes32[] memory topics = new bytes32[](2);
+        topics[0] = EventSignatures.VOTE_CAST;
+        topics[1] = bytes32(uint256(uint160(ALICE)));
+
+        bytes memory encoded = ReceiptBuilder.successful(
+            // Anyone can deploy a contract emitting a byte-identical VoteCast.
+            ReceiptBuilder.one(ReceiptBuilder.log(IMPOSTOR, topics, abi.encode(uint256(1))))
+        );
+
+        vm.expectRevert(
+            abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, GOVERNOR, IMPOSTOR)
+        );
+        _submit(_claim(FactTypes.GOVERNANCE_ACTIVITY, 33_000_020, keccak256("gov3"), 0, encoded));
+    }
+
+    function _submitVote(address voter, uint256 proposalId, uint64 blockNumber, bytes32 txHash)
+        internal
+    {
+        // IGovernor: VoteCast(address indexed voter, uint256 proposalId, ...).
+        bytes32[] memory topics = new bytes32[](2);
+        topics[0] = EventSignatures.VOTE_CAST;
+        topics[1] = bytes32(uint256(uint160(voter)));
+
+        bytes memory encoded = ReceiptBuilder.successful(
+            ReceiptBuilder.one(
+                ReceiptBuilder.log(GOVERNOR, topics, abi.encode(proposalId, uint8(1), uint256(100)))
+            )
+        );
+
+        _submit(_claim(FactTypes.GOVERNANCE_ACTIVITY, blockNumber, txHash, 0, encoded));
     }
 }

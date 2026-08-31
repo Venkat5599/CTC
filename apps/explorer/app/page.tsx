@@ -71,10 +71,10 @@ export default function ExplorerHome() {
         </div>
 
         <p className="mt-10 max-w-[62ch] text-[13px] leading-relaxed text-[--color-ink-faint]">
-          Governance is defined and deliberately unregistered. The standard
-          Governor does not index the voter in its VoteCast event, so no subject
-          topic can name the address the fact is about, and registering it would
-          silently pin the wrong one.
+          Three domains, deliberately. Shipping only repayment history would
+          collapse Vouch into a credit score; the point of a registry is that it
+          is domain-agnostic, and adding a fourth is a row in SourceRegistry
+          rather than a code change.
         </p>
       </Section>
 

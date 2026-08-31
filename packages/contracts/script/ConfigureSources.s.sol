@@ -31,12 +31,17 @@ import {FactTypes, EventSignatures} from "../src/core/FactTypes.sol";
 ///      whose indexed set differs; index 2 is onBehalfOf. Confirm both against a
 ///      real receipt before trusting this file.
 ///
-///      GOVERNANCE IS DELIBERATELY LEFT OUT. The standard OpenZeppelin Governor
-///      does NOT index `voter` in VoteCast, so the subject cannot be read from a
-///      topic at all. Registering it with subjectTopicIndex would silently pin
-///      the wrong address. It needs either a Governor that indexes the voter or
-///      a data-decoding path in SourceValidator, and shipping it wrong is worse
-///      than shipping two fact types.
+///      GOVERNANCE. OpenZeppelin's IGovernor declares
+///        VoteCast(address indexed voter, uint256 proposalId, uint8 support,
+///                 uint256 weight, string reason)
+///      so `voter` IS indexed and sits at topic index 1. An earlier version of
+///      this script held the fact type back on the claim that it was not
+///      indexed; that claim was checked against the installed contracts and was
+///      wrong.
+///
+///      The GOVERNOR address below must still be verified before broadcast. It
+///      is the one field here with no default worth trusting: every Governor
+///      deployment is its own contract.
 ///
 ///      Usage:
 ///        VOUCH_REGISTRY_ADDRESS=0x... forge script \
@@ -50,6 +55,14 @@ contract ConfigureSources is Script {
     address internal constant AAVE_V3_POOL = 0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2;
 
     uint8 internal constant SUBJECT_TOPIC_INDEX = 2;
+
+    /// @dev Compound Governor Bravo on Ethereum mainnet. Verify against a real
+    ///      VoteCast receipt before broadcasting: a wrong emitter matches no
+    ///      logs and the fact type simply looks unused.
+    address internal constant GOVERNOR = 0xc0Da02939E1441F497fd74F78cE7Decb17B66529;
+
+    /// @dev `voter` is topic 1 in IGovernor.VoteCast.
+    uint8 internal constant VOTER_TOPIC_INDEX = 1;
 
     function run() external {
         address registryAddr = vm.envAddress("VOUCH_REGISTRY_ADDRESS");
@@ -77,6 +90,14 @@ contract ConfigureSources is Script {
             AAVE_V3_POOL,
             EventSignatures.AAVE_SUPPLY,
             SUBJECT_TOPIC_INDEX
+        );
+
+        registry.registerSource(
+            FactTypes.GOVERNANCE_ACTIVITY,
+            CHAINKEY_ETHEREUM_MAINNET,
+            GOVERNOR,
+            EventSignatures.VOTE_CAST,
+            VOTER_TOPIC_INDEX
         );
 
         vm.stopBroadcast();
