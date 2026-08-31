@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { SectionHeading, Section, Snippet } from '@vouch/ui';
+import { SectionHeading, Snippet } from '@vouch/ui';
 
 /**
  * Consumers.
@@ -36,8 +36,8 @@ const CONSUMERS = [
 export default function AppsPage() {
   return (
     <>
-      <Section>
-        <SectionHeading lead="Three contracts read the same registry. They share no storage, were never registered with it, and do not know each other exists. The only thing they have in common is an address passed at construction.">
+      <section>
+        <SectionHeading align="left" lead="Three contracts read the same registry. They share no storage, were never registered with it, and do not know each other exists. The only thing they have in common is an address passed at construction.">
           One registry, many consumers
         </SectionHeading>
 
@@ -68,11 +68,11 @@ export default function AppsPage() {
             </div>
           ))}
         </div>
-      </Section>
+      </section>
 
-      <Section className="border-t border-[--color-line]">
+      <section className="mt-16 border-t border-border pt-16">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-center lg:gap-16">
-          <SectionHeading lead="A test asserts it rather than a README claiming it. One proven repayment lowers collateral, opens the access gate, and leaves the exchange fee untouched, because the exchange reads a different fact type entirely.">
+          <SectionHeading align="left" lead="A test asserts it rather than a README claiming it. One proven repayment lowers collateral, opens the access gate, and leaves the exchange fee untouched, because the exchange reads a different fact type entirely.">
             Proven in the test suite
           </SectionHeading>
 
@@ -84,11 +84,11 @@ assertTrue(accessGate.isAdmitted(ALICE));           // gate open
 assertEq(feeTier.feeBpsFor(ALICE), 30);             // unchanged`}
           </Snippet>
         </div>
-      </Section>
+      </section>
 
-      <Section className="border-t border-[--color-line]">
+      <section className="mt-16 border-t border-border pt-16">
         <div className="max-w-[58ch]">
-          <SectionHeading lead="Nothing needs to be registered with Vouch. A consumer deployed after a fact was proven reads that fact immediately, which is what makes this a primitive rather than a platform with a waiting list.">
+          <SectionHeading align="left" lead="Nothing needs to be registered with Vouch. A consumer deployed after a fact was proven reads that fact immediately, which is what makes this a primitive rather than a platform with a waiting list.">
             Building a fourth
           </SectionHeading>
           <div className="mt-8">
@@ -97,7 +97,7 @@ assertEq(feeTier.feeBpsFor(ALICE), 30);             // unchanged`}
             </Link>
           </div>
         </div>
-      </Section>
+      </section>
     </>
   );
 }

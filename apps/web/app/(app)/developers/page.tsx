@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { SectionHeading, Section, Snippet } from '@vouch/ui';
+import { SectionHeading, Snippet } from '@vouch/ui';
 
 /**
  * Integration guide.
@@ -12,15 +12,15 @@ import { SectionHeading, Section, Snippet } from '@vouch/ui';
 export default function DevelopersPage() {
   return (
     <>
-      <Section>
-        <SectionHeading lead="Vouch proves facts. It does not decide what they mean. Whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
+      <section>
+        <SectionHeading align="left" lead="Vouch proves facts. It does not decide what they mean. Whether a proven repayment is worth lower collateral, a fee tier or a game unlock is your contract's decision, and Vouch never needs to know you made it.">
           Integrate
         </SectionHeading>
-      </Section>
+      </section>
 
-      <Section className="border-t border-[--color-line]">
+      <section className="mt-16 border-t border-border pt-16">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-          <SectionHeading lead="One interface, one view call. No registration, no allowlist, no key.">
+          <SectionHeading align="left" lead="One interface, one view call. No registration, no allowlist, no key.">
             On chain
           </SectionHeading>
 
@@ -41,11 +41,11 @@ contract YourProtocol {
 }`}
           </Snippet>
         </div>
-      </Section>
+      </section>
 
-      <Section className="border-t border-[--color-line]">
+      <section className="mt-16 border-t border-border pt-16">
         <div className="grid gap-12 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16">
-          <SectionHeading lead="The SDK returns standing as proven or unknown rather than a boolean, so an unproven address cannot be silently rendered as a negative one.">
+          <SectionHeading align="left" lead="The SDK returns standing as proven or unknown rather than a boolean, so an unproven address cannot be silently rendered as a negative one.">
             Off chain
           </SectionHeading>
 
@@ -64,11 +64,11 @@ if (standing.state === 'proven') {
 }`}
           </Snippet>
         </div>
-      </Section>
+      </section>
 
-      <Section className="border-t border-[--color-line]">
+      <section className="mt-16 border-t border-border pt-16">
         <div className="max-w-[62ch]">
-          <SectionHeading>Three things worth knowing before you ship</SectionHeading>
+          <SectionHeading align="left">Three things worth knowing before you ship</SectionHeading>
 
           <div className="mt-8 space-y-8">
             <div>
@@ -125,7 +125,7 @@ if (standing.state === 'proven') {
             </Link>
           </div>
         </div>
-      </Section>
+      </section>
     </>
   );
 }

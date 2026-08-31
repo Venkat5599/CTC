@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { SectionHeading, Section, Empty, Pill } from '@vouch/ui';
+import { SectionHeading, Empty, Pill } from '@vouch/ui';
 import { PassportView } from '@/components/passport/passport-view';
 import { useWallet } from '@/hooks/useWallet';
 
@@ -13,8 +13,8 @@ export default function PassportPage() {
   const active = subject ?? address ?? null;
 
   return (
-    <Section>
-      <SectionHeading lead="Standing is public. Any address can be looked up by anyone, because a fact proven on chain is not a private one.">
+    <section>
+      <SectionHeading align="left" lead="Standing is public. Any address can be looked up by anyone, because a fact proven on chain is not a private one.">
         Passport
       </SectionHeading>
 
@@ -67,6 +67,6 @@ export default function PassportPage() {
           />
         )}
       </div>
-    </Section>
+    </section>
   );
 }

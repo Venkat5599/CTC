@@ -1,6 +1,6 @@
 'use client';
 
-import { SectionHeading, Section, Empty, Pill } from '@vouch/ui';
+import { SectionHeading, Empty, Pill } from '@vouch/ui';
 import { REGISTERED_FACTS } from '@vouch/schemas';
 import { Pipeline } from '@/components/verification/pipeline';
 import { useProofStatus } from '@/hooks/useProof';
@@ -11,8 +11,8 @@ export default function VerifyPage() {
   const { data: statuses } = useProofStatus(address);
 
   return (
-    <Section>
-      <SectionHeading lead="Discovery is automatic. The relayer scans the source chain, batches what it finds, and submits. Nothing here needs your signature, and anyone can run a relayer if ours stops.">
+    <section>
+      <SectionHeading align="left" lead="Discovery is automatic. The relayer scans the source chain, batches what it finds, and submits. Nothing here needs your signature, and anyone can run a relayer if ours stops.">
         Verification
       </SectionHeading>
 
@@ -57,6 +57,6 @@ export default function VerifyPage() {
           />
         )}
       </div>
-    </Section>
+    </section>
   );
 }
