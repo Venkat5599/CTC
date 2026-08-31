@@ -55,7 +55,7 @@ export function Panel({
   interactive?: boolean;
 }) {
   return (
-    <div className="rounded-[22px] border border-white/[0.055] bg-white/[0.018] p-1.5">
+    <div className="h-full rounded-[22px] border border-white/[0.055] bg-white/[0.018] p-1.5">
       <div
         className={`glass ${interactive ? "glass-hover" : ""} rounded-[16px] ${className}`}
         style={{ transitionTimingFunction: EASE }}
