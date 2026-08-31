@@ -2,10 +2,11 @@
 
 import { ArrowUpRight } from "@phosphor-icons/react";
 import Link from "next/link";
+import { useState } from "react";
 
+import { AddressField, Section } from "@/components/dashboard/data";
 import {
   Button,
-  ButtonGlyph,
   Mono,
   Panel,
   SectionLabel,
@@ -45,37 +46,76 @@ const COLLATERAL_BPS = [15_000, 13_000, 11_500, 10_000] as const;
 
 export default function DashboardPage() {
   const { address, isConnected, isConnecting, canConnect, connect } = useWallet();
-  const passport = usePassport(address);
-  const facts = useFacts(address);
+
+  // A typed address wins over the connected one, so you can inspect anybody
+  // without disconnecting.
+  const [subject, setSubject] = useState<string | null>(null);
+  const active = subject ?? address ?? null;
+  const viewingOther = Boolean(subject && subject !== address?.toLowerCase());
+
+  const passport = usePassport(active ?? undefined);
+  const facts = useFacts(active ?? undefined);
 
   const tier = passport.data?.tier ?? 0;
   const total = passport.data?.totalProofs ?? 0;
-  const loading = isConnected && (passport.isLoading || facts.isLoading);
+  const loading = Boolean(active) && (passport.isLoading || facts.isLoading);
   const newest = facts.data?.[0];
   const rows = facts.data ?? [];
 
   return (
     <>
-      <header className="mb-10 flex flex-wrap items-end justify-between gap-6">
-        <div>
-          <SectionLabel>Dashboard</SectionLabel>
-          <h1 className="mt-3 text-[34px] leading-[1.05] font-medium tracking-[-0.035em] sm:text-[40px]">
-            Your verified cross-chain activity
-          </h1>
-        </div>
-
-        {/* The connect control lives in the header rather than inside an empty
-            state, so the layout is the same shape before and after connecting
-            and nothing jumps when the data arrives. */}
-        {!isConnected ? (
-          <Button onClick={connect} disabled={!canConnect || isConnecting}>
-            {!canConnect ? "No wallet found" : isConnecting ? "Connecting…" : "Connect wallet"}
-            <ButtonGlyph>
-              <ArrowUpRight size={12} weight="bold" />
-            </ButtonGlyph>
-          </Button>
-        ) : null}
+      <header className="mb-8">
+        <SectionLabel>Dashboard</SectionLabel>
+        <h1 className="mt-3 text-[34px] leading-[1.05] font-medium tracking-[-0.035em] sm:text-[40px]">
+          {viewingOther ? "Verified cross-chain activity" : "Your verified cross-chain activity"}
+        </h1>
       </header>
+
+      {/*
+        The subject selector, and the reason it is on the home page at all.
+
+        Standing is public and reading it is a view call, so gating the whole
+        dashboard behind a wallet connection contradicted the one claim the
+        protocol makes loudest. Every figure below reads whichever address is
+        active, whether that came from a wallet or from this field.
+
+        There is no second connect button here on purpose: the sidebar carries
+        one permanently, and two controls with the same intent on one screen is
+        a duplicate, not an affordance.
+      */}
+      <div className="mb-4">
+        <Section
+          title="Address"
+          description={
+            active
+              ? undefined
+              : "Reading standing never requires a signature. Paste any address, or connect a wallet."
+          }
+          action={
+            active ? (
+              <div className="flex items-center gap-3">
+                <Mono value={active} chars={5} />
+                <span className="text-[12px] text-[var(--vouch-text-faint)]">
+                  {viewingOther ? "looked up" : "your wallet"}
+                </span>
+                {viewingOther ? (
+                  <Button variant="ghost" onClick={() => setSubject(null)}>
+                    Clear
+                  </Button>
+                ) : null}
+              </div>
+            ) : canConnect && !isConnected ? (
+              <Button variant="secondary" onClick={connect} disabled={isConnecting}>
+                {isConnecting ? "Connecting…" : "Use my wallet"}
+              </Button>
+            ) : null
+          }
+        >
+          <div className="px-6 py-5">
+            <AddressField id="dashboard-address" onSubmit={setSubject} />
+          </div>
+        </Section>
+      </div>
 
       {/* Two columns sharing one grid: the artifact on the left, the two figures
           stacked to match its height. Below 1024px it collapses to a single
@@ -101,24 +141,24 @@ export default function DashboardPage() {
         <div className="order-1 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:order-2 lg:col-span-5 lg:grid-cols-1">
           <Figure
             label="Verified facts"
-            value={loading ? "…" : isConnected ? String(total) : "0"}
+            value={loading ? "…" : active ? String(total) : "0"}
             hint={
-              !isConnected
-                ? "Connect to read your standing. It is a public view call, so Vouch never asks you to sign."
+              !active
+                ? "Paste an address above, or connect a wallet. Reading standing is a public view call."
                 : total > 0
                   ? `${TIER_NAMES[tier]} standing. The registry is append-only, so this rises and never falls.`
                   : "Nothing proven yet. That reads as unknown, never as clean."
             }
             href="/proofs"
             action="View proofs"
-            {...(isConnected && tier > 0 ? { verified: true } : {})}
+            {...(active && tier > 0 ? { verified: true } : {})}
           />
 
           <Figure
             label="Credit terms"
-            value={loading ? "…" : `${COLLATERAL_BPS[isConnected ? tier : 0] / 100}%`}
+            value={loading ? "…" : `${COLLATERAL_BPS[active ? tier : 0] / 100}%`}
             hint={
-              isConnected && tier > 0
+              active && tier > 0
                 ? `Collateral required, down from ${COLLATERAL_BPS[0] / 100}% unproven.`
                 : `Baseline collateral. One proven repayment moves this to ${COLLATERAL_BPS[1] / 100}%.`
             }
@@ -152,9 +192,9 @@ export default function DashboardPage() {
             // protocol "nothing proven" is frequently the correct answer, and a
             // giant empty box makes an ordinary state look like a failure.
             <p className="max-w-[68ch] px-6 py-8 text-[13px] leading-relaxed text-[var(--vouch-text-muted)]">
-              {isConnected
+              {active
                 ? "Nothing has been proven for this address yet. That is not a judgement about it: Vouch can prove that something happened, never that it did not."
-                : "Connect a wallet to see the facts proven for your address, or open the explorer to read any address."}
+                : "Enter an address above, or connect a wallet, to see the facts proven for it."}
             </p>
           ) : (
             <ul className="divide-y divide-white/[0.05]">
