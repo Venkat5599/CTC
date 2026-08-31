@@ -1,20 +1,22 @@
 import type { ReactNode } from "react";
 
-import { TopNav } from "@/components/dashboard/top-nav";
+import { SideNav } from "@/components/dashboard/side-nav";
 
 /**
  * Dashboard shell.
  *
- * One layout for every inner route. The sidebar is gone: navigation is a single
- * compact row and the content gets the width, which is the difference between a
- * product and a documentation site.
+ * A fixed left rail and a content column offset past it. One navigation, at
+ * every width -- the rail becomes a drawer under lg rather than being replaced
+ * by a second nav that can drift out of sync with the first.
  */
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-background">
-      <TopNav />
-      <main id="main-content" className="mx-auto w-full max-w-[1280px] px-4 py-10 sm:px-6 sm:py-12">
-        {children}
+      <SideNav />
+      <main id="main-content" className="lg:pl-52">
+        <div className="mx-auto w-full max-w-[1100px] px-5 py-10 sm:px-8 sm:py-12">
+          {children}
+        </div>
       </main>
     </div>
   );

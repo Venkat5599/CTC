@@ -195,3 +195,26 @@ body {
     display: none;
   }
 }
+
+/*
+ * Autofill.
+ *
+ * Chrome paints its own background on autofilled inputs and it wins over any
+ * background rule, which turned the address field into a solid block of accent
+ * green with unreadable text. There is no property to disable it, so the
+ * standard fix is an inset shadow large enough to cover the field, plus
+ * -webkit-text-fill-color for the text the normal color property no longer
+ * reaches.
+ *
+ * The long transition delay is the other half: the painted colour is applied
+ * with a transition, so pushing it out effectively never lets it land.
+ */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px var(--card-secondary) inset !important;
+  -webkit-text-fill-color: var(--foreground) !important;
+  caret-color: var(--foreground);
+  transition: background-color 5000s ease-in-out 0s;
+}
