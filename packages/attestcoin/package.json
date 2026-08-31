@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@gluwa/usc-sdk": "^0.18.0",
     "@vouch/proof-engine": "*",
     "viem": "^2.21.0"
   },

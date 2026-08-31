@@ -71,6 +71,41 @@ Vouch verifies once and stores canonically. The first consumer pays; **every sub
 
 ---
 
+## Proven end to end
+
+A real Aave repayment on Sepolia, proven through the Attestcoin precompile and
+written to the registry. Not a fixture, and not our own transaction -- the point
+of a standing registry is that history is proven rather than asserted, so the
+demo proves a repayment we had no hand in.
+
+| | |
+|---|---|
+| Source transaction | [`0x55e617f1...a493941e`](https://sepolia.etherscan.io/tx/0x55e617f1a86b8f2d73a7f2519c80052449488b3e74945a318ba6cc8da493941e) on Sepolia |
+| Subject | `0x83900c0eda960a31899d51aae9b9c180a7e21711` |
+| Verification | [`0x979e3dbe...ebf5c0f8`](https://creditcoin-testnet.blockscout.com/tx/0x979e3dbe9002522ce08d7e481feb274b1f97c4a4b46d080963936cebebf5c0f8) on CC3 Testnet |
+| Continuity proof | 89 roots |
+| Gas | 565,420 |
+
+Three unrelated consumers then read that one fact and grant three different
+things:
+
+| Consumer | Reads | Result |
+|---|---|---|
+| `VouchPassport` | repayment count | Tier 1 |
+| `VouchCredit` | repayment history | 130% collateral, down from 150% |
+| `VouchAccess` | any registered fact | gate open |
+| `VouchFeeTier` | **supply** history | 0.30%, unchanged |
+
+The last row is the interesting one. The exchange fee does not move, because it
+reads a different fact type. Standing does not leak between domains, which is
+what separates a registry from a score.
+
+Check it yourself:
+
+```bash
+cast call 0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329   "hasProof(address,bytes32)(bool)"   0x83900c0eda960a31899d51aae9b9c180a7e21711   $(cast keccak "AAVE_REPAYMENT")   --rpc-url https://rpc.cc3-testnet.creditcoin.network
+```
+
 ## Deployed — CC3 Testnet
 
 | Contract | Address |
