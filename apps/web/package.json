@@ -10,6 +10,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.59.0",
+    "@vouch/config": "*",
+    "@vouch/schemas": "*",
+    "@vouch/sdk": "*",
+    "@vouch/ui": "*",
     "lenis": "^1.3.17",
     "lucide-react": "^0.562.0",
     "motion": "^12.23.26",
@@ -17,11 +23,6 @@
     "next-themes": "^0.4.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "@vouch/config": "*",
-    "@vouch/schemas": "*",
-    "@vouch/sdk": "*",
-    "@vouch/ui": "*",
-    "@tanstack/react-query": "^5.59.0",
     "viem": "^2.21.0",
     "wagmi": "^2.12.0"
   },

@@ -101,7 +101,7 @@ export default function ExplorerPage() {
 
       <section className="mt-16" aria-labelledby="contracts">
         <SectionLabel>
-          <span id="contracts">Deployed contracts — {NETWORK}</span>
+          <span id="contracts">Deployed contracts on {NETWORK}</span>
         </SectionLabel>
 
         <ul className="divide-border border-border mt-4 divide-y rounded-xl border">

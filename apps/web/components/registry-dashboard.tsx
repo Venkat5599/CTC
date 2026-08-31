@@ -38,7 +38,7 @@ const FACTS = [
   {
     label: "Governance participation",
     detail: "VoteCast(address,uint256,uint8,uint256,string)",
-    count: "—",
+    count: "…",
     proven: false,
   },
 ];

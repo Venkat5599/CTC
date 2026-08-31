@@ -45,7 +45,7 @@ export function ProofDetail({ fact }: { fact: VerifiedFact }) {
         <Field label="Log index">
           <span className="font-mono tabular-nums">{fact.logIndex}</span>
         </Field>
-        <Field label="Event">{definition?.eventSignature ?? "—"}</Field>
+        <Field label="Event">{definition?.eventSignature ?? "Not recorded"}</Field>
         <Field label="Emitter">
           <Mono value={fact.emitter} />
         </Field>

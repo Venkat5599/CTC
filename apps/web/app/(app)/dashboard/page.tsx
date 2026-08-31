@@ -3,9 +3,12 @@
 import Link from "next/link";
 
 import {
+  ArrowGlyph,
   Button,
+  ButtonGlyph,
   EmptyState,
   Mono,
+  Panel,
   SectionLabel,
   SkeletonRows,
   StatusBadge,
@@ -50,9 +53,9 @@ export default function DashboardPage() {
 
   return (
     <>
-      <header className="mb-10">
+      <header className="mb-12">
         <SectionLabel>Dashboard</SectionLabel>
-        <h1 className="mt-2 text-[28px] leading-[1.12] font-medium tracking-[-0.03em] sm:text-[32px]">
+        <h1 className="mt-3 text-[34px] leading-[1.05] font-medium tracking-[-0.035em] sm:text-[42px]">
           Your verified cross-chain activity
         </h1>
       </header>
@@ -66,6 +69,9 @@ export default function DashboardPage() {
               canConnect ? (
                 <Button onClick={connect} disabled={isConnecting}>
                   {isConnecting ? "Connecting…" : "Connect wallet"}
+                  <ButtonGlyph>
+                    <ArrowGlyph />
+                  </ButtonGlyph>
                 </Button>
               ) : (
                 <Button href="/proofs" variant="secondary">
@@ -86,7 +92,7 @@ export default function DashboardPage() {
           <section className="mb-14 grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="Standing">
             <SummaryCard
               label="Verified facts"
-              value={loading ? "—" : String(total)}
+              value={loading ? "…" : String(total)}
               hint={
                 total > 0
                   ? `${TIER_NAMES[tier]} standing. Rises, never falls.`
@@ -99,7 +105,7 @@ export default function DashboardPage() {
 
             <SummaryCard
               label="Credit terms"
-              value={loading ? "—" : `${COLLATERAL_BPS[tier] / 100}%`}
+              value={loading ? "…" : `${COLLATERAL_BPS[tier] / 100}%`}
               hint={
                 tier > 0
                   ? `Collateral required, down from ${COLLATERAL_BPS[0] / 100}% unproven.`
@@ -133,7 +139,7 @@ export default function DashboardPage() {
               </SectionLabel>
               <Link
                 href="/proofs"
-                className="text-muted-foreground hover:text-foreground text-[13px] transition-colors"
+                className="text-[13px] text-[var(--vouch-text-muted)] transition-colors duration-300 hover:text-[var(--vouch-text)]"
               >
                 View all
               </Link>
@@ -152,20 +158,20 @@ export default function DashboardPage() {
                 }
               />
             ) : (
-              <ul className="divide-border border-border divide-y rounded-xl border">
+              <ul className="glass divide-y divide-white/[0.05] overflow-hidden rounded-[18px]">
                 {facts.data.slice(0, 8).map((fact) => {
                   const definition = factById(fact.factType);
                   return (
                     <li key={fact.factId}>
                       <Link
                         href={`/proofs?fact=${fact.factId}`}
-                        className="hover:bg-muted/40 focus-visible:outline-accent flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3.5 transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-5"
+                        className="focus-visible:outline-accent flex flex-wrap items-center gap-x-6 gap-y-2 px-5 py-4 transition-colors duration-300 hover:bg-white/[0.035] focus-visible:outline-2 focus-visible:-outline-offset-2 sm:px-6"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="text-foreground text-[14px]">
+                          <div className="text-[14px] text-[var(--vouch-text)]">
                             {definition?.label ?? "Unknown fact"}
                           </div>
-                          <div className="text-muted-foreground mt-0.5 text-[12px]">
+                          <div className="mt-0.5 text-[12px] text-[var(--vouch-text-muted)]">
                             Ethereum Sepolia
                           </div>
                         </div>
@@ -173,7 +179,7 @@ export default function DashboardPage() {
                         <StatusBadge status="verified" />
 
                         <div className="hidden text-right sm:block">
-                          <div className="text-muted-foreground font-mono text-[12px] tabular-nums">
+                          <div className="font-mono text-[12px] tabular-nums text-[var(--vouch-text-muted)]">
                             Block {String(fact.blockNumber)}
                           </div>
                           <div className="mt-0.5">
@@ -215,24 +221,29 @@ function SummaryCard({
   verified?: boolean;
 }) {
   return (
-    <div className="border-border flex flex-col rounded-xl border p-5">
+    <Panel className="flex h-full flex-col p-6" interactive>
       <div className="flex items-start justify-between gap-3">
-        <span className="text-muted-foreground text-[12px]">{label}</span>
+        <span className="text-[12px] text-[var(--vouch-text-muted)]">{label}</span>
         {verified ? <StatusBadge status="verified" /> : null}
       </div>
 
-      <div className="text-foreground mt-4 font-mono text-[32px] leading-none tracking-tight tabular-nums">
+      <div className="mt-5 font-mono text-[38px] leading-none tracking-[-0.03em] tabular-nums text-[var(--vouch-text)]">
         {value}
       </div>
 
-      <p className="text-muted-foreground mt-3 max-w-[42ch] text-[12px] leading-relaxed">{hint}</p>
+      <p className="mt-3 max-w-[42ch] flex-1 text-[12.5px] leading-relaxed text-[var(--vouch-text-muted)]">
+        {hint}
+      </p>
 
       <Link
         href={href}
-        className="text-muted-foreground hover:text-foreground focus-visible:outline-accent mt-6 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="focus-visible:outline-accent group mt-7 inline-flex w-fit items-center gap-2 text-[12.5px] text-[var(--vouch-text-muted)] transition-colors duration-300 hover:text-[var(--vouch-text)] focus-visible:outline-2 focus-visible:outline-offset-4"
       >
-        {action} →
+        {action}
+        <span className="flex size-5 items-center justify-center rounded-full bg-white/[0.06] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-px">
+          <ArrowGlyph />
+        </span>
       </Link>
-    </div>
+    </Panel>
   );
 }

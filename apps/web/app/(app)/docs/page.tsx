@@ -34,7 +34,7 @@ const RULES = [
   {
     id: "S3",
     title: "Proofs are public and replayable",
-    body: "Once a proof exists on chain, anybody can resubmit it. The replay guard is keyed on the log — transaction hash plus the receipt-wide log index — never on the transaction alone, because one transaction can carry several claimable events.",
+    body: "Once a proof exists on chain, anybody can resubmit it. The replay guard is keyed on the log (transaction hash plus the receipt-wide log index), never on the transaction alone, because one transaction can carry several claimable events.",
   },
 ] as const;
 
@@ -103,7 +103,7 @@ export default function DocsPage() {
         <p className="text-muted-foreground mt-4 max-w-[68ch] text-[13px] leading-relaxed">
           Attestcoin addresses source chains through its own key space. On CC3
           Testnet, <code className="font-mono">1</code> is Ethereum Sepolia and{" "}
-          <code className="font-mono">3</code> is Ethereum mainnet — neither
+          <code className="font-mono">3</code> is Ethereum mainnet. Neither
           matches the chain id you would reach for. Passing a chain id where a
           chainKey belongs does not revert; it proves against the wrong chain and
           fails silently. The SDK brands the two types apart so the compiler
@@ -113,7 +113,7 @@ export default function DocsPage() {
 
       <section aria-labelledby="addresses">
         <SectionLabel>
-          <span id="addresses">Addresses — {NETWORK}</span>
+          <span id="addresses">Addresses on {NETWORK}</span>
         </SectionLabel>
 
         <dl className="divide-border border-border mt-4 divide-y rounded-xl border">
