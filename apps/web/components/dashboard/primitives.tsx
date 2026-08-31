@@ -75,16 +75,21 @@ export function BackButton({
 /**
  * The top of every inner page.
  *
- * Label, title, one line of explanation, optional action. Consistent across all
- * six routes so a page always begins the same way and the eye knows where to
- * land.
+ * Label, title, one line of explanation, optional action. Consistent across the
+ * routes so a page always begins the same way and the eye knows where to land.
+ *
+ * No back control by default. Every top-level destination is one click away in
+ * the rail, so a back button there is a second, weaker navigation sitting on top
+ * of the real one. Deep pages -- a single proof, one explorer transaction, one
+ * application -- pass `back` explicitly, because those are the only places the
+ * rail cannot return you to.
  */
 export function PageHeader({
   label,
   title,
   description,
   action,
-  back = true,
+  back = false,
   backHref,
 }: {
   label?: string;

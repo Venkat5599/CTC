@@ -218,3 +218,35 @@ input:-webkit-autofill:active {
   caret-color: var(--foreground);
   transition: background-color 5000s ease-in-out 0s;
 }
+
+/* ---------------------------------------------------------------------------
+ * Vouch design system
+ *
+ * Dark only. A protocol asking to be trusted with financial history should look
+ * like infrastructure, so the palette is near-black surfaces, hairline borders,
+ * and exactly one accent.
+ *
+ * Primary is reserved for VERIFIED, ACTIVE, and PRIMARY ACTION. Nothing else.
+ * When the only saturated colour on the page carries one meaning, that meaning
+ * reads without a legend.
+ * ------------------------------------------------------------------------- */
+
+:root,
+.dark {
+  --vouch-bg: #080808;
+  --vouch-surface: #111111;
+  --vouch-surface-raised: #161616;
+  --vouch-border: #202020;
+  --vouch-border-strong: #2c2c2c;
+
+  --vouch-primary: #b7f34d;
+  --vouch-success: #72f5a1;
+  --vouch-danger: #ff6b6b;
+  --vouch-warning: #f5c451;
+
+  --vouch-text: #fafafa;
+  --vouch-text-muted: #a1a1a1;
+  --vouch-text-faint: #6b6b6b;
+
+  --vouch-radius: 12px;
+}

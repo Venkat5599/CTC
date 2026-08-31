@@ -10,6 +10,7 @@ import {
   SkeletonRows,
   StatusBadge,
 } from "@/components/dashboard/primitives";
+import { CrossChainPipeline } from "@/components/vouch/pipeline";
 import { useFacts } from "@/hooks/useFacts";
 import { usePassport } from "@/hooks/usePassport";
 import { useWallet } from "@/hooks/useWallet";
@@ -18,15 +19,18 @@ import { factById } from "@vouch/schemas";
 /**
  * Dashboard.
  *
- * The overview of the protocol, not of any one module. An earlier version led
- * with a "View Passport" button, which framed Vouch as a credit passport that
- * happens to have other pages -- the opposite of the argument. Passport is one
- * consumer of the registry, and it is reachable from the Standing card, which
- * is where somebody actually wants it: you read your tier, then ask what
- * produced it.
+ * Home for the protocol, not for any one module. An earlier version led with a
+ * "View Passport" button, which framed Vouch as a credit passport that happens
+ * to have other pages -- the opposite of the argument. Passport is one consumer
+ * of the registry, reachable from the standing figure itself, which is where
+ * somebody actually wants it: read the tier, then ask what produced it.
  *
- * Four numbers, then the facts underneath them. A number without its evidence
- * is a score, and a score is what this protocol refuses to be.
+ * Two numbers, then the pipeline that produced them. A number without its
+ * evidence is a score, and a score is what this protocol refuses to be, so the
+ * verification path is the centrepiece rather than a diagram filed under docs.
+ *
+ * No back control here: this is the root, and every destination is one click
+ * away in the rail.
  */
 
 const TIER_NAMES = ["Unproven", "Tier 1", "Tier 2", "Tier 3"] as const;
@@ -42,77 +46,85 @@ export default function DashboardPage() {
   const tier = passport.data?.tier ?? 0;
   const total = passport.data?.totalProofs ?? 0;
   const loading = passport.isLoading || facts.isLoading;
+  const newest = facts.data?.[0];
 
   return (
     <>
-      <header className="mb-12 max-w-[60ch]">
-        <h1 className="text-[30px] leading-[1.12] font-medium tracking-[-0.03em] sm:text-[36px]">
-          Your history. Verified.
+      <header className="mb-10">
+        <SectionLabel>Dashboard</SectionLabel>
+        <h1 className="mt-2 text-[28px] leading-[1.12] font-medium tracking-[-0.03em] sm:text-[32px]">
+          Your verified cross-chain activity
         </h1>
-        <p className="text-muted-foreground mt-4 text-[15px] leading-relaxed">
-          Cryptographically verified facts from other chains, made reusable
-          across Creditcoin.
-        </p>
       </header>
 
       {!isConnected ? (
-        <EmptyState
-          title="Connect a wallet to see your standing"
-          description="Reading standing is a public view call, so Vouch never asks you to sign. Connecting only tells this page which address to read."
-          action={
-            canConnect ? (
-              <Button onClick={connect} disabled={isConnecting}>
-                {isConnecting ? "Connecting…" : "Connect wallet"}
-              </Button>
-            ) : (
-              <Button href="/proofs" variant="secondary">
-                Browse the registry instead
-              </Button>
-            )
-          }
-        />
+        <>
+          <EmptyState
+            title="Connect a wallet to see your standing"
+            description="Reading standing is a public view call, so Vouch never asks you to sign. Connecting only tells this page which address to read."
+            action={
+              canConnect ? (
+                <Button onClick={connect} disabled={isConnecting}>
+                  {isConnecting ? "Connecting…" : "Connect wallet"}
+                </Button>
+              ) : (
+                <Button href="/proofs" variant="secondary">
+                  Browse the registry instead
+                </Button>
+              )
+            }
+          />
+
+          {/* Shown before connecting too. The path a fact travels is the
+              product, and it does not depend on whose address is loaded. */}
+          <div className="mt-14">
+            <CrossChainPipeline />
+          </div>
+        </>
       ) : (
         <>
-          {/* Four numbers describing the protocol's state for this address.
-              Each links to the module that owns it, which is how Passport is
-              reachable without leading the navigation. */}
-          <section className="mb-14" aria-labelledby="overview">
-            <SectionLabel>
-              <span id="overview">Overview</span>
-            </SectionLabel>
+          <section className="mb-14 grid grid-cols-1 gap-4 sm:grid-cols-2" aria-label="Standing">
+            <SummaryCard
+              label="Verified facts"
+              value={loading ? "—" : String(total)}
+              hint={
+                total > 0
+                  ? `${TIER_NAMES[tier]} standing. Rises, never falls.`
+                  : "Nothing proven yet. Unknown, not clean."
+              }
+              href="/proofs"
+              action="View proofs"
+              {...(tier > 0 ? { verified: true } : {})}
+            />
 
-            <div className="border-border grid grid-cols-1 gap-px overflow-hidden rounded-xl border sm:grid-cols-2 lg:grid-cols-4">
-              <OverviewCell
-                label="Verified facts"
-                value={loading ? "—" : String(total)}
-                hint={total > 0 ? "Proven on chain" : "Nothing proven yet"}
-                href="/proofs"
-                action="View proofs"
-              />
-              <OverviewCell
-                label="Standing"
-                value={loading ? "—" : TIER_NAMES[tier]}
-                hint={tier > 0 ? "Rises, never falls" : "Unknown, not clean"}
-                href="/passport"
-                action="View standing"
-                {...(tier > 0 ? { verified: true } : {})}
-              />
-              <OverviewCell
-                label="Credit"
-                value={loading ? "—" : `${COLLATERAL_BPS[tier] / 100}%`}
-                hint={tier > 0 ? `Down from ${COLLATERAL_BPS[0] / 100}%` : "Baseline collateral"}
-                href="/credit"
-                action="View terms"
-              />
-              <OverviewCell
-                label="Applications"
-                value="3"
-                hint="Consuming this registry"
-                href="/apps"
-                action="View applications"
-              />
-            </div>
+            <SummaryCard
+              label="Credit terms"
+              value={loading ? "—" : `${COLLATERAL_BPS[tier] / 100}%`}
+              hint={
+                tier > 0
+                  ? `Collateral required, down from ${COLLATERAL_BPS[0] / 100}% unproven.`
+                  : `Baseline collateral. Proving one fact moves this to ${COLLATERAL_BPS[1] / 100}%.`
+              }
+              href="/credit"
+              action="View terms"
+            />
           </section>
+
+          <div className="mb-14">
+            <CrossChainPipeline
+              {...(newest
+                ? {
+                    fact: {
+                      factType: factById(newest.factType)?.label ?? "Verified fact",
+                      sourceChain: "Ethereum Sepolia",
+                      txHash: newest.txHash,
+                      blockNumber: String(newest.blockNumber),
+                      factId: newest.factId,
+                    },
+                  }
+                : {})}
+            />
+          </div>
 
           <section aria-labelledby="activity">
             <div className="mb-4 flex items-end justify-between gap-4">
@@ -182,13 +194,12 @@ export default function DashboardPage() {
 }
 
 /**
- * One overview number.
+ * One headline number with the sentence that makes it mean something.
  *
- * A cell in a single bordered grid rather than four floating cards -- gap-px on
- * a bordered container gives hairline dividers and one outer edge, which reads
- * as an instrument panel instead of a set of tiles.
+ * A percentage on its own invites the reader to guess whether it is good. The
+ * hint says what it is down from, so the number carries its own comparison.
  */
-function OverviewCell({
+function SummaryCard({
   label,
   value,
   hint,
@@ -204,21 +215,21 @@ function OverviewCell({
   verified?: boolean;
 }) {
   return (
-    <div className="bg-background flex flex-col p-5">
+    <div className="border-border flex flex-col rounded-xl border p-5">
       <div className="flex items-start justify-between gap-3">
         <span className="text-muted-foreground text-[12px]">{label}</span>
         {verified ? <StatusBadge status="verified" /> : null}
       </div>
 
-      <div className="text-foreground mt-3 font-mono text-[24px] leading-none tracking-tight tabular-nums">
+      <div className="text-foreground mt-4 font-mono text-[32px] leading-none tracking-tight tabular-nums">
         {value}
       </div>
 
-      <div className="text-muted-foreground mt-2 text-[12px]">{hint}</div>
+      <p className="text-muted-foreground mt-3 max-w-[42ch] text-[12px] leading-relaxed">{hint}</p>
 
       <Link
         href={href}
-        className="text-muted-foreground hover:text-foreground focus-visible:outline-accent mt-5 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="text-muted-foreground hover:text-foreground focus-visible:outline-accent mt-6 text-[12px] transition-colors focus-visible:outline-2 focus-visible:outline-offset-2"
       >
         {action} →
       </Link>

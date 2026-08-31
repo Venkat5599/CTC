@@ -1,20 +1,21 @@
 import type { ReactNode } from "react";
 
-import { SideNav } from "@/components/dashboard/side-nav";
+import { Sidebar } from "@/components/vouch/sidebar";
 
 /**
- * Dashboard shell.
+ * Application shell.
  *
- * A fixed left rail with the content offset past it. One navigation at every
- * width -- under lg the rail becomes a drawer rather than being swapped for a
- * separate mobile nav, since two navs built separately drift and the mobile one
- * is always the one that rots.
+ * A fixed left rail with the content offset past it, and nothing above the
+ * content. There is no top navigation at any width: under lg the same rail
+ * opens as a drawer rather than being swapped for a separate header, since two
+ * navigations built separately drift and the mobile one is always the one that
+ * rots.
  */
 export function DashboardShell({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-background min-h-[100dvh]">
-      <SideNav />
-      <main id="main-content" className="lg:pl-56">
+    <div className="min-h-[100dvh] bg-[var(--vouch-bg)]">
+      <Sidebar />
+      <main id="main-content" className="lg:pl-[232px]">
         <div className="mx-auto w-full max-w-[1080px] px-5 py-10 sm:px-8 sm:py-12">
           {children}
         </div>
