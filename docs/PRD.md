@@ -1,14 +1,14 @@
 # Vouch — Product Requirements Document
 
-**Portable On-Chain Standing.**
-*Prove what you've done on any supported chain once. Let every Creditcoin application recognize it.*
+**Verified borrower history, proven not asserted.**
+*One Attestcoin proof of what a borrower actually did. Every Creditcoin issuer reads it for a storage read.*
 
 | Field | Value |
 |---|---|
-| Version | 2.0 — registry-first repositioning |
-| Date | 2026-08-30 |
+| Version | 3.0 — adversarial verification, issuer repositioning |
+| Date | 2026-09-01 |
 | Event | BUIDL CTC 2026 Fall — "BUIDL For The Real World" |
-| Track | DeFi |
+| Track | RWA |
 | Theme requirement | Attestcoin Protocol as a core feature |
 | Execution chain | Creditcoin CC3 Testnet |
 | Source chain | Ethereum Mainnet (`chainKey 3`) |
@@ -73,18 +73,47 @@ This season already has technically serious cross-chain credit entries:
 
 **A working Attestcoin integration is therefore not a differentiator.** It is table stakes. Any submission whose pitch is "we proved Aave history on Creditcoin" is competing directly with two teams that have already done exactly that, possibly with more test coverage.
 
-The winning argument has to be structural:
+v3.0 differentiates on three axes, in descending order of defensibility.
 
-> **CrossCredit proves cross-chain credit works. Vouch turns cross-chain proof into a reusable ecosystem primitive.**
+### 2.1 Adversarially verified — the primary claim
 
-CrossCredit and Spark are *one application consuming cross-chain history*. Vouch is *the shared layer many applications consume*. The entire submission is built around that distinction — architecture, demo, pitch, and roadmap.
+Everyone in this field can *consume* an Attestcoin proof. We demonstrate that we understand where the proof layer **breaks**, and that our verifier holds.
 
-Practical consequences for what we build:
+> **A valid Attestcoin proof can still be a lie.**
 
-1. The registry's public read interface is the headline artifact, not the lending pool.
-2. The demo must show **more than one independent consumer** reading the same proof. One consumer makes us a competitor to CrossCredit. Multiple consumers make us a different category.
-3. Proof types must be **broader than credit** from day one. Shipping only `AAVE_REPAYMENT` would collapse us back into the credit-app category.
-4. The pitch leads with the primitive and uses credit as illustration.
+Three ways, all silent, none of which revert:
+
+- **S1** — the precompile proves *inclusion, not success*. A reverted transaction is still in its block and proves perfectly.
+- **S2** — anyone can deploy a contract emitting Aave's exact `topic0` and field layout. A proof of that forgery is **cryptographically valid**.
+- **S3** — proofs are public and replayable, and one transaction can carry several claimable events.
+
+The demo does not describe these. It **performs S2 live**: a lookalike emitter on a source chain, a genuine proof of a forged event, a naive consumer accepting it and issuing credit, and Vouch rejecting the identical proof on emitter mismatch.
+
+No other entry will attack the protocol it is building on. This is the strongest available evidence for the one criterion the brief actually scores — *"depth of Attestcoin Protocol utilization"* — because it demonstrates understanding a working integration does not.
+
+### 2.2 Issuer, not borrower — the customer change
+
+v2.0 sold a standing **passport to a borrower**. v3.0 sells a borrower-verification **primitive to an issuer**.
+
+Evidence for the change, with its limits stated:
+
+- **Colosseum builder corpus** (5,400+ projects): on-chain credit-score and reputation projects have been attempted repeatedly and none are recorded winners — `credencechain-2`, `cipherscore`, `solana-credit-scoring`, `lyhva`, `branq`. The consumer-facing "portable score" framing has a poor track record.
+- **Stellar ecosystem directory** (as of 2026-08-31): 97 RWA projects, where the Live ones are regulated institutional issuers — Franklin Templeton (Benji), Ondo, WisdomTree, Spiko (AMF/ACPR-regulated), RedSwan (FINRA-regulated). 43 anchors, all Live, are emerging-market fiat rails — MoneyGram, Bitso (LATAM), Yellow Card (Africa's largest licensed stablecoin ramp), Fonbnk. Meanwhile generic money markets churn: Slender and OrbitCDP both **Inactive**.
+
+**Claim discipline.** Both corpora are *other ecosystems* — Solana and Stellar. They are evidence about which product framings survive in comparable markets. They are **not** evidence about Creditcoin demand, and this PRD does not use them that way. What they support is a positioning decision, not a market-size forecast.
+
+The conclusion we do draw: the party with the problem is the one underwriting the loan, not the one taking it. Issuers cannot see a borrower's history on another chain, and today have no trust-minimized way to ask.
+
+### 2.3 Shared primitive, not an application — retained from v2.0
+
+CrossCredit and Spark are *one application consuming cross-chain history*. Vouch is *the shared layer many applications consume*. The demo shows multiple independent consumers reading one proof and granting different benefits, including one that correctly grants nothing.
+
+### 2.4 Why RWA rather than DeFi
+
+Two reasons, one strategic and one substantive.
+
+1. **The direct competition is in DeFi.** Entering the same track as two mature cross-chain-credit entries invites a feature comparison we do not want and do not need.
+2. **RWA is Creditcoin's actual business.** Real-world credit for underbanked borrowers is the 2017 thesis. Verified borrower history is an RWA underwriting input, not a DeFi yield feature.
 
 ---
 
@@ -117,6 +146,7 @@ Proving a foreign chain's state without a trusted operator is what Attestcoin re
 - **G4** — Support **three proof types** spanning more than one domain, so the primitive is visibly general.
 - **G5** — Make historical proof economically viable by defeating the continuity-proof gas cliff (§7).
 - **G6** — Ship a correct ASC: emitter-pinned, status-checked, replay-guarded, with a written threat model.
+- **G7** — **Demonstrate the attack, not just the defence.** Ship a working S2 forgery against a naive consumer, and show Vouch rejecting the identical proof. This is the primary differentiator (§2.1) and is not cuttable.
 
 ### 4.2 Non-goals
 - **NG1** — Attestcoin **Writability**. Out of scope per the kickoff AMA. Roadmap only (§13).
@@ -126,22 +156,30 @@ Proving a foreign chain's state without a trusted operator is what Attestcoin re
 - **NG5** — Off-chain or ML scoring. Every input must be cryptographically proven.
 - **NG6** — Mainnet deployment.
 - **NG7** — Out-competing CrossCredit on lending features. Wrong axis; we are not a lending protocol.
+- **NG8** — Regulatory or compliance tooling for RWA issuance. We supply one underwriting input. We are not an issuance platform, a transfer agent, or a KYC provider.
+- **NG9** — Claiming Creditcoin market demand from Solana or Stellar ecosystem data. Those corpora informed positioning only (§2.2).
 
 ---
 
 ## 5. Users
 
-### 5.1 Ethereum user with history (primary)
+### 5.1 Credit issuer on Creditcoin (primary)
+
+Underwrites a loan, prices collateral, or gates a facility, and cannot see what the borrower did anywhere else. Today the options are a centralized snapshot, a self-reported claim, or nothing. With Vouch it is one `view` call against facts proven by consensus rather than asserted by an operator — no ASC to write, no worker to run, no proof gas to pay.
+
+This is the party with the problem, and v3.0 is written for them.
+
+### 5.2 Ethereum user with history (source of the data)
 Has done real things on Ethereum. Gets nothing for it elsewhere. Vouch is a permissionless entry point that makes that history expressible on Creditcoin.
 
 > **Claim discipline.** We do not say "millions of Ethereum users will come to Creditcoin." That is a projection, not evidence. We say: **"Vouch creates a permissionless entry point for existing Ethereum users to bring verifiable on-chain standing into Creditcoin."** Mechanism, not forecast. This language is binding across the PRD, README, pitch, and deck.
 
-### 5.2 Creditcoin application builder (equally primary)
+### 5.3 Creditcoin application builder (equally primary)
 Wants to reward genuine users, price risk, or gate access. Today has no trust-minimized way to distinguish a veteran from a fresh wallet. With Vouch, it is one `view` call — no ASC to write, no worker to run, no proof gas to pay.
 
 This user is why Vouch is a primitive rather than an app, and they are half the pitch.
 
-### 5.3 Emerging-market borrower (narrative)
+### 5.4 Emerging-market borrower (narrative)
 Draws against standing, off-ramps to local currency through existing Creditcoin rails. The closing illustration of "real users and fiat connections," presented as roadmap, not as built.
 
 ---
@@ -277,6 +315,7 @@ Stated in the pitch, the README, and the technical demo. It is a correctness pro
 - **M7** — Public repo from day one with incremental commit history.
 - **M8** — Integration guide showing a third party how to consume Vouch in under 20 lines.
 - **M9** — Pitch video ≤3 min; technical demo 2–3 min.
+- **M10** — **Live S2 forgery.** A lookalike emitter on a source chain, a genuine Attestcoin proof of the forged event, a naive consumer accepting it, and Vouch rejecting it. Reproducible by a judge from the repo.
 
 ### 10.2 Should have
 - Public dashboard: proofs verified, CTC saved by batching, addresses onboarded, consumers registered.
@@ -300,32 +339,39 @@ Stated in the pitch, the README, and the technical demo. It is a correctness pro
 | **Execution capability** | Narrow, provable two-week scope. Transparent daily commits. Real mainnet data on testnet. |
 | **Market fit** | Portable reputation generalizes beyond Creditcoin; on-chain credit is the cited flagship application of it. |
 
-**Against the field.** CrossCredit and Spark demonstrate cross-chain credit. Neither is a shared primitive. Our claim is narrow, defensible, and demonstrable in the demo: *the same proof, consumed three different ways, by three contracts that do not know about each other.*
+**Against the field.** CrossCredit and Spark demonstrate cross-chain credit. Both integrations presumably work. Ours does too, and that is table stakes.
 
-**Top-3 is not guaranteed.** The field is technically serious. The bet is that judges evaluating "ecosystem expansion" reward the layer every future team builds on over the third instance of the same application.
+The claim that separates us is narrower and harder to copy: *we can break a naive Attestcoin consumer on stage, with a proof that is cryptographically valid, and show our verifier rejecting it.* That is a statement about depth of protocol understanding, which is the one thing the brief says it scores. A team that has only consumed proofs cannot make it.
+
+Secondary: the same proof consumed three different ways by three contracts that do not know about each other — including one that correctly grants nothing.
+
+**Top-3 is not guaranteed.** The field is technically serious and "depth" is judged subjectively. The bet is that a demonstrated attack outscores another working integration.
 
 ---
 
 ## 12. Milestones
 
-2026-08-30 → 09-13.
+Days 1–14 of the original plan are complete: contracts deployed to CC3 Testnet, one real source-chain Aave repayment proven end to end through the Block Prover precompile, five contracts live, three consumers reading one registry, S1/S2/S3 implemented and tested, frontend deployed.
+
+**Remaining: 2026-09-01 → 09-13.** v3.0 adds two things and reframes the rest.
 
 | Day | Milestone | Exit criteria |
 |---|---|---|
-| 1 | Repo public, scaffold, RPC + faucet, SDK spike | One Sepolia tx proven locally |
-| 2–3 | `VouchRegistry.sol` — verify, pin, store | One real mainnet Aave `Repay` verified on CC3 Testnet |
-| 4 | Proof-type registry, 3 types configured | All three verify end to end |
-| 5 | Keeper: indexer + proof builder + submitter | Unattended single-fact flow |
-| 6–7 | Batch packer, 1000-block bucketing | ⌈N/10⌉ continuity proofs demonstrated |
-| 8 | `VouchPassport.sol` + monotonic aggregation | `hasProof` / `passportOf` live |
-| 9 | `LendingConsumer.sol` | Reduced-collateral borrow executes |
-| 10 | `FeeTierConsumer.sol` + `AccessConsumer.sol` | **Three independent consumers, one registry** |
-| 11 | Gas benchmark harness | Table published incl. Nth-consumer marginal cost |
-| 12 | Security tests S1/S2/S3 + `THREAT_MODEL.md` | Each attack demonstrably rejected |
-| 13 | Frontend + integration guide | Full flow clickable; third-party guide written |
-| 14 | Pitch video, technical demo, README, submit | Submitted with buffer |
+| 1 | **Mainnet source path** | `chainKey 3` proves one real Ethereum **mainnet** Aave `Repay` on CC3 Testnet. Riskiest unknown — settle it first. |
+| 2 | **S2 forgery, offensive half** | Lookalike emitter deployed on a source chain; a genuine Attestcoin proof of the forged `Repay` is produced. |
+| 3 | **S2 forgery, defensive half** | `NaiveConsumer.sol` accepts the forged proof and grants credit; `VouchRegistry` rejects the identical proof on emitter mismatch. Both paths under test. |
+| 4 | **Forgery in the product** | Demo surface switching between naive and guarded verification, driven by the real proof. Judge-reproducible from the repo. |
+| 5 | **Issuer reframing** | Copy, README and dashboard addressed to the issuer (§5.1), not the borrower. Track fields updated to RWA. |
+| 6 | **Attestcoin integration write-up** | `docs/ATTESTCOIN.md`: what is proven, what is not, the three failure modes, the chainKey trap, and why each check exists. A scored deliverable. |
+| 7 | Deck | Narrative per §2.1: table stakes, then the attack. |
+| 8 | Pitch video + technical demo | ≤3 min and 2–3 min. |
+| 9 | Submit | Submitted with four days of slack. |
 
-Cut order under schedule pressure: dashboard → `AccessConsumer` polish → frontend polish. **Never cut:** the second consumer (M2), the security tests, or the benchmark. Those three are the entire argument.
+**Slack: days 10–13.** Deliberate. The forgery is the one item whose feasibility is not yet proven, and it owns the front of the schedule so that failure is discovered on day 2 rather than day 11.
+
+**Fallback.** If the S2 forgery cannot be produced — if the prover or the precompile rejects a lookalike event for a reason not yet found — v3.0 degrades to v2.0: the shared-primitive claim (§2.3) plus mainnet proofs, on the RWA track. That is still a complete submission. The cost of finding out is two days, and it is spent first for exactly that reason.
+
+**Never cut:** M10 (the forgery), M6 (the security tests), M2 (the second consumer). Those are the argument.
 
 ---
 

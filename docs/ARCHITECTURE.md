@@ -1,20 +1,25 @@
 # Vouch — Architecture
 
-**Attestcoin proves the fact. Vouch makes the fact reusable. Applications decide what the fact is worth.**
+**Attestcoin proves the fact. Vouch establishes that the fact means what it appears to mean. Applications decide what it is worth.**
+
+*A valid proof is not the same as a true claim. The gap between those two is where this system does its work.*
 
 | Field | Value |
 |---|---|
-| Version | 2.0 — registry-first |
-| Date | 2026-08-30 |
+| Version | 3.0 — adversarial verification |
+| Date | 2026-09-01 |
 | Execution chain | Creditcoin CC3 Testnet |
-| Source chain | Ethereum Mainnet (`chainKey 3`) |
+| Source chain (honest path) | Ethereum Mainnet (`chainKey 3`) |
+| Source chain (adversarial path) | Ethereum Sepolia (`chainKey 1`) |
 | Companion doc | [PRD.md](./PRD.md) |
 
 ---
 
 ## 1. Design thesis
 
-Three commitments, in priority order.
+Four commitments, in priority order.
+
+**0. Inclusion is not authorship.** Attestcoin proves that a transaction was included in a block on a source chain. It does not prove the transaction succeeded, that the contract emitting the event is the one you meant, or that you have not seen this proof before. Every one of those gaps is silent: the proof verifies, nothing reverts, and the consuming contract records something false. Establishing semantics on top of proven inclusion is the actual product (§7).
 
 **1. Verify once, reuse forever.** Attestcoin readability is powerful but priced against repetition — each verification pays for a continuity proof whose length grows as the source block ages. Any system that re-verifies the same history per application, per query, is economically dead. Vouch verifies once, stores canonically, and amortizes across every future consumer.
 
@@ -559,6 +564,34 @@ Enforced consequences:
 - Consumers receive positive evidence only; a collateral ratio floors at 100% and never reaches zero.
 
 Documented in `docs/security/threat-model.md`, stated in the pitch, shown in the technical demo. A correctness property, not a disclaimer.
+
+---
+
+### 7.6 The adversarial harness — a shipped artifact
+
+S2 is not described in the submission. It is **performed**, from the repo, by a judge if they choose.
+
+The harness is four pieces:
+
+| Piece | Chain | Role |
+|---|---|---|
+| `SpoofEmitter.sol` | Ethereum Sepolia | Emits a `Repay` event with Aave's exact signature and field layout. Not affiliated with Aave in any way. |
+| `NaiveConsumer.sol` | CC3 Testnet | Verifies `topic0` and nothing else. Represents the integration a careful team writes on a deadline. |
+| `VouchRegistry` | CC3 Testnet | The real verifier: emitter-pinned, status-checked, replay-guarded. |
+| `scripts/attack/forge-fact.mjs` | — | Emits, proves through the real Block Prover, submits the identical proof to both. |
+
+**Why Sepolia and not mainnet for the forgery.** The honest path proves real Ethereum mainnet history (`chainKey 3`) because real data is the point. The *attack* deliberately runs on Sepolia (`chainKey 1`) instead. Deploying a contract to Ethereum mainnet whose only purpose is to emit convincing fake Aave events would leave a live artifact designed to deceive anyone else reading mainnet logs. The vulnerability class is identical on both chains — `topic0` is not chain-specific — so nothing is lost by demonstrating it where it is safe to demonstrate. Both `chainKey` values are exercised in the same submission, which also proves the branded-type handling is real rather than hardcoded.
+
+**The assertion the harness makes.** Not "our contract is secure" — an unfalsifiable claim. Instead, two specific and checkable ones:
+
+1. `NaiveConsumer.hasProof(attacker, AAVE_REPAYMENT) == true` after submitting the forged proof.
+2. `VouchRegistry.submitBatch(...)` reverts with `EmitterMismatch` on the identical proof bytes.
+
+The same proof, byte for byte, into two contracts, with opposite outcomes. The proof is valid in both cases. Only the semantics differ, and that is the entire lesson.
+
+**Why this is the strongest evidence of protocol depth.** A working integration demonstrates that a team can follow the tutorial. A working *attack* demonstrates that a team understands what the tutorial does not say: that Attestcoin guarantees inclusion, and inclusion is not authorship, and authorship is what a credit fact actually depends on.
+
+**Failure mode of the harness itself.** If the proof builder or the precompile refuses to prove the lookalike event for a reason not yet discovered, the S2 claim degrades from *demonstrated* to *defended by test only*, and the submission falls back to the v2.0 argument. This is why the harness is built on days 2–3 of the remaining schedule rather than at the end.
 
 ---
 
