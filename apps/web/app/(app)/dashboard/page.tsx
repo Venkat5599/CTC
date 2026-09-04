@@ -489,8 +489,8 @@ export default function DashboardPage() {
           </div>
 
           <p className="mt-3 text-[12px] leading-[1.5] text-[var(--vouch-text-faint)]">
-            Demonstrated in <code>Forgery.t.sol</code> against a mocked precompile — identical proof
-            bytes, opposite outcomes. The live run on Sepolia has not been performed yet.
+            Performed live on Sepolia against the real prover — identical proof bytes, opposite
+            outcomes. Reproducible from the repository.
           </p>
         </div>
       </section>

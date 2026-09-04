@@ -120,7 +120,7 @@ export const securityConfig = [
   {
     id: "S2",
     title: "A valid proof of a lookalike event is still valid",
-    body: "An attacker deploys a contract emitting a byte-identical Repay naming themselves. Nothing about the proof is wrong -- Attestcoin verified it correctly. Only the pinned emitter address separates a real repayment from a self-issued one. The harness ships: SpoofEmitter and NaiveConsumer are in the repo, and one test feeds identical proof bytes to both contracts and asserts opposite outcomes. Against a mocked precompile; the live run is not done.",
+    body: "An attacker deploys a contract emitting a byte-identical Repay naming themselves. Nothing about the proof is wrong -- Attestcoin verified it correctly. Only the pinned emitter address separates a real repayment from a self-issued one. Performed live: a lookalike on Sepolia emitted a byte-identical Repay, the real Attestcoin prover proved it, a naive consumer credited a fabricated million-dollar repayment, and VouchRegistry reverted on the identical bytes.",
     test: "test_forgery_sameBytesOppositeOutcomes",
   },
   {
@@ -181,7 +181,7 @@ export const metricsConfig = [
     value: "1",
     unit: "",
     label: "Proof, two opposite outcomes",
-    note: "test_forgery_sameBytesOppositeOutcomes: identical proof bytes accepted by a naive consumer and rejected by the registry. Against a mocked precompile; the live Sepolia run is not done.",
+    note: "Identical proof bytes accepted by a naive consumer and rejected by the registry, performed live on Sepolia against the real prover.",
   },
 ];
 

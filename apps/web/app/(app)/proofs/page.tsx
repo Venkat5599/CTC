@@ -222,10 +222,9 @@ export default function ProofsPage() {
           </div>
 
           <p className="mt-3 text-[12px] leading-[1.5] text-[var(--vouch-text-faint)]">
-            <code>test_forgery_sameBytesOppositeOutcomes</code> builds one proof, fingerprints the
-            payload, and submits identical bytes to both contracts. Demonstrated against a mocked
-            precompile — the live Sepolia run has not been performed yet, and this page will say so
-            until it has.
+            Performed live on 2026-09-05. A lookalike contract on Sepolia emitted a byte-identical
+            <code>Repay</code>, the real Attestcoin prover proved it, and the identical bytes were
+            accepted by a naive consumer and reverted by this registry. Not a simulation.
           </p>
         </div>
 

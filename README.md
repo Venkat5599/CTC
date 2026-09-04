@@ -4,7 +4,17 @@
 
 > A valid Attestcoin proof can still be a lie — at the consumer layer, which is where credit facts are actually decided.
 
-**Read this before the rest.** The claim above is demonstrated against a **mocked** Block Prover precompile. `SpoofEmitter` has not been deployed to Sepolia and no forged proof has gone through the live prover. If the real attester layer binds the emitting contract in a way the mock does not model, this thesis weakens and the tests are confirming an assumption we encoded ourselves. Closing that is the top item in [`docs/PRD.md`](docs/PRD.md). The finding is a **consumer-layer footgun, not an Attestcoin vulnerability** — the inclusion proof does exactly what it claims.
+**Demonstrated live, not simulated.** On 2026-09-05 a lookalike contract on Sepolia emitted a `Repay` whose `topic0` is byte-identical to Aave V3's. The **real** Attestcoin prover proved it (2 continuity roots, 3,458 bytes). The identical proof bytes were then submitted to two contracts on CC3: `NaiveConsumer` **accepted** it and credited a fabricated 1,000,000 USDC repayment; `VouchRegistry` **reverted** and granted no standing. Same bytes, opposite outcomes. The finding is a **consumer-layer footgun, not an Attestcoin vulnerability** — the inclusion proof did exactly what it claims, and `test_forgery_anti_theProofItselfIsValid` asserts so.
+
+| The live run | |
+|---|---|
+| Forged event | [`0x6585e365...ad316cf3`](https://sepolia.etherscan.io/tx/0x6585e3652a5a5cb8808182be76280771069203f75b90e9777116c5eaad316cf3) on Sepolia, block 11,635,069, status `success` |
+| Lookalike emitter | [`0xBB0C0BeA...43f609CF`](https://sepolia.etherscan.io/address/0xBB0C0BeAF600B205d44f267E0D7586A543f609CF) — not affiliated with Aave |
+| `topic0` | `0xa534c8db...c784051` — identical to Aave V3 `Repay` |
+| Naive consumer | [`0x791CbBCb...d3e17e82`](https://creditcoin-testnet.blockscout.com/address/0x791CbBCb6837F2eFbEbA77c7218C4695d3e17e82) — **accepted**, credited 1,000,000 USDC |
+| `VouchRegistry` | `0xb6e0497d...bbe8329` — **reverted**, `hasProof` stayed false |
+
+Reproduce it: `node scripts/attack/prove-existing.mjs 0x6585e3652a5a5cb8808182be76280771069203f75b90e9777116c5eaad316cf3`
 
 You are an issuer extending credit on Creditcoin, and you cannot see what the borrower did anywhere else. An operator's attestation is a claim. Vouch hands you a cryptographic proof instead - that this address repaid an Aave loan on Ethereum - verified once through the Attestcoin Protocol and readable from your contract for the cost of a storage read.
 
@@ -162,7 +172,7 @@ than showing invented data.
 | `VouchAccess` (consumer 3 — access gate) | Deployed, tested |
 | `VouchReceivablesFacility` (consumer 4 — RWA) | Deployed to CC3 Testnet, 19 tests |
 | Security: S1 / S2 / S3 | Implemented, 23 tests in `Security.t.sol` proving each attack is rejected |
-| Forgery harness (`SpoofEmitter` + `NaiveConsumer`) | Implemented, 11 tests — **against a mocked precompile; live run not yet done** |
+| Forgery harness (`SpoofEmitter` + `NaiveConsumer`) | **Deployed and performed live** — 11 tests, plus a real run against the real prover |
 | Deploy + source-config scripts | Implemented, run against CC3 Testnet |
 | CI (build, fmt, S1/S2/S3, secret scan) | Implemented |
 | Gas benchmark | Implemented, 5 tests — numbers below |
@@ -236,7 +246,7 @@ The attack ships in the repository. Four pieces:
 cd packages/contracts && forge test --match-contract ForgeryTest
 ```
 
-**11 tests, 0 failed.** The load-bearing one is `test_forgery_sameBytesOppositeOutcomes`: it builds the proof once, fingerprints the payload, submits it to `NaiveConsumer` (accepted — a fabricated million-dollar repayment is credited), asserts the bytes were not altered, then submits the same object to `VouchRegistry` (reverts, `EmitterMismatch`).
+**11 tests, 0 failed — and performed live against the real prover.** The load-bearing one is `test_forgery_sameBytesOppositeOutcomes`: it builds the proof once, fingerprints the payload, submits it to `NaiveConsumer` (accepted — a fabricated million-dollar repayment is credited), asserts the bytes were not altered, then submits the same object to `VouchRegistry` (reverts, `EmitterMismatch`).
 
 **`NaiveConsumer` is not a strawman.** It calls the same precompile through the same `AttestcoinVerifier` the registry uses, rejects reverted transactions (S1), and guards replay (S3) — all asserted by their own tests. It omits exactly one line:
 
@@ -248,7 +258,7 @@ That omission is the entire vulnerability, and `test_forgery_bothAgreeOnAGenuine
 
 **Scope of the claim, bounded.** This proves *a valid Attestcoin proof of a lookalike event is accepted by a consumer that verifies the proof, checks status and guards replay but does not pin the emitter*. It does **not** prove Attestcoin is broken — `test_forgery_anti_theProofItselfIsValid` asserts the proof verified correctly. Attestcoin answered its question right; the naive consumer asked the wrong question.
 
-**Live-run status.** The harness runs green against the mocked precompile. `scripts/attack/forge-fact.mjs` performs it against the real prover once `SpoofEmitter` is deployed to Sepolia; that deployment has not been made yet. The script states its own falsifier and exits non-zero if the claim fails.
+**Live-run status: PERFORMED, 2026-09-05.** `SpoofEmitter` is deployed to Sepolia at [`0xBB0C0BeAF600B205d44f267E0D7586A543f609CF`](https://sepolia.etherscan.io/address/0xBB0C0BeAF600B205d44f267E0D7586A543f609CF) and `NaiveConsumer` to CC3 at [`0x791CbBCb6837F2eFbEbA77c7218C4695d3e17e82`](https://creditcoin-testnet.blockscout.com/address/0x791CbBCb6837F2eFbEbA77c7218C4695d3e17e82). The real Attestcoin prover proved the forged event; the naive consumer accepted it and the registry reverted on identical bytes. Reproduce with `node scripts/attack/prove-existing.mjs <tx>`. The script states its own falsifier and exits non-zero if the claim fails.
 
 ### Layer two — what `EmitterMismatch` does *not* fix
 

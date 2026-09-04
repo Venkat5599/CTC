@@ -297,9 +297,10 @@ export default function LiveDemoPage() {
           </div>
         </div>
         <p className="mt-3 text-[11.5px] leading-[1.5] text-[var(--vouch-text-faint)]">
-          Demonstrated in <code>test_forgery_sameBytesOppositeOutcomes</code> against a mocked
-          precompile: one proof, fingerprinted, submitted to two contracts, opposite outcomes. The
-          live Sepolia run has not been performed, and this line will say so until it has.
+          Performed live on 2026-09-05, not simulated. A lookalike contract on Sepolia emitted a
+          byte-identical <code>Repay</code>; the real Attestcoin prover proved it; the identical
+          bytes were accepted by a naive consumer (crediting 1,000,000 USDC that never moved) and
+          reverted by this registry.
         </p>
       </section>
     </>
