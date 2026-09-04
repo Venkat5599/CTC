@@ -87,7 +87,9 @@ Three ways, all silent, none of which revert:
 - **S2** — anyone can deploy a contract emitting Aave's exact `topic0` and field layout. A proof of that forgery is **cryptographically valid**.
 - **S3** — proofs are public and replayable, and one transaction can carry several claimable events.
 
-The demo does not describe these. It **performs S2 live**: a lookalike emitter on a source chain, a genuine proof of a forged event, a naive consumer accepting it and issuing credit, and Vouch rejecting the identical proof on emitter mismatch.
+The demo does not describe these. It **performs S2**: `SpoofEmitter.sol` and `NaiveConsumer.sol` ship in `src/attack/`, and `ForgeryTest` feeds identical proof bytes to the naive consumer and the registry and asserts opposite outcomes. 11 tests, 0 failed.
+
+**Live-run status, stated precisely.** The harness executes against the mocked precompile today. `scripts/attack/forge-fact.mjs` performs the same sequence against the real Attestcoin prover once `SpoofEmitter` is deployed to Sepolia; that deployment has not been made. Until it has, the claim is "the attack is implemented and asserted", not "the attack has been run against the live prover". The script carries its own falsifier and exits non-zero if either half fails.
 
 No other entry will attack the protocol it is building on. This is the strongest available evidence for the one criterion the brief actually scores — *"depth of Attestcoin Protocol utilization"* — because it demonstrates understanding a working integration does not.
 
@@ -284,7 +286,7 @@ Three protocol-specific failure modes. Full treatment in ARCHITECTURE §7.
 
 Also: bound `continuityRoots` length against gas griefing; reject transactions above the ~500KB provability limit; pin `chainKey` explicitly (on CC3 Testnet `1` is Sepolia, `3` is Ethereum Mainnet — trivial to confuse, expensive to discover).
 
-**This matters more for a registry than for an app.** A bug in one lending app harms that app. A bug in a shared registry harms every consumer. `THREAT_MODEL.md` ships in the repo, and the S2 attack is demonstrated live in the technical demo.
+**This matters more for a registry than for an app.** A bug in one lending app harms that app. A bug in a shared registry harms every consumer. `THREAT_MODEL.md` ships in the repo. S2 is enforced in the registry and covered by `test_S2_spoofedEmitterIsRejected` today; the live end-to-end demonstration (ARCHITECTURE.md section 7.6) is built on days 2-3 and is not claimed as shipped until it has run.
 
 ---
 

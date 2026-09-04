@@ -23,7 +23,7 @@ separate proof key, so each can be credited by the naive consumer exactly once.
 
 | Take | Sepolia transaction |
 |---|---|
-| 1 | `0x742943649f847ae4f9a358c4688564e63a804c6ab5b80d352fbdfa17dca6e5e2` |
+| ~~1~~ | ~~`0x742943…dca6e5e2`~~ — used in a rehearsal, will print ALREADY CONSUMED |
 | 2 | `0x886cef88a6d6277ac7bf0dbc0a44296e758db854f4b7100dc0479ee179087dd4` |
 | 3 | `0xc5b8ae72ac724f1633683bbf22b9f98c9e8b6a40e961eb4ec6d5e8d95ca74288` |
 
@@ -40,7 +40,7 @@ with the wallet already connected to Creditcoin CC3 and gas in it.
 No title card. No logo. Start on the terminal, already typed, and hit enter.
 
 ```bash
-node scripts/attack/prove-existing.mjs <TAKE-1-HASH>
+node scripts/attack/prove-existing.mjs 0x886cef88a6d6277ac7bf0dbc0a44296e758db854f4b7100dc0479ee179087dd4
 ```
 
 Say nothing for the first ten seconds. Let it print.
@@ -156,6 +156,11 @@ Hold on the URL for two seconds. End.
 
 **The prover returns 404** — the block isn't attested yet. Use a different
 take's hash, or say so and move to the pipeline section.
+
+**`ReserveAssetMismatch`** — should not happen. Discovery now prefers a
+repayment whose reserve matches the pinned asset, because roughly one in six on
+Sepolia settles in some other token and the registry correctly refuses those. If
+you see it, the scanner found no USDC repayment in its window; rerun.
 
 **The naive consumer prints ALREADY CONSUMED** — that hash was used in an
 earlier take. Switch hashes. This is the guard working correctly, not a

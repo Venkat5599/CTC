@@ -30,6 +30,18 @@ import { sepolia } from "viem/chains";
  */
 
 const AAVE_POOL_SEPOLIA = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951" as const;
+
+/**
+ * The reserve asset the registry pins for AAVE_REPAYMENT (S4).
+ *
+ * Discovery has to respect it. Roughly one in six repayments on Sepolia settles
+ * in some other token, and submitting one of those would revert
+ * `ReserveAssetMismatch` -- correctly, since the registry cannot value a token
+ * nobody registered. Picking a matching repayment is selecting a fact this
+ * registry can actually verify, not weakening the check: the rejection still
+ * happens, it just happens in the scanner instead of costing the user gas.
+ */
+const PINNED_RESERVE = "0x94a9d9ac8a22534e3faca9f4e7f2e2cf85d5e4c8";
 const REPAY_TOPIC = keccak256(
   toHex("Repay(address,address,address,uint256,bool)")
 );
@@ -63,7 +75,17 @@ export async function POST(): Promise<NextResponse> {
         fromBlock: toBlock - 8_000n,
         toBlock,
       });
-      found = logs.find((l) => l.topics[0] === REPAY_TOPIC) ?? null;
+      const repayments = logs.filter((l) => l.topics[0] === REPAY_TOPIC);
+
+      // Prefer one the registry will accept. Falling back to any repayment
+      // keeps the route useful against a registry with no asset pinned -- the
+      // submission then either succeeds or reverts honestly.
+      found =
+        repayments.find(
+          (l) => `0x${l.topics[1]?.slice(-40)}`.toLowerCase() === PINNED_RESERVE,
+        ) ??
+        repayments[0] ??
+        null;
     }
 
     if (!found || !found.transactionHash || found.logIndex === null) {
@@ -79,6 +101,7 @@ export async function POST(): Promise<NextResponse> {
     // The subject is topic 2 (`user`), the borrower whose debt was cleared --
     // NOT `repayer`, who may be a third party settling on their behalf.
     const subject = `0x${found.topics[2]?.slice(-40)}` as `0x${string}`;
+    const reserveAsset = `0x${found.topics[1]?.slice(-40)}` as `0x${string}`;
 
     // eth_getLogs reports logIndex scoped to the BLOCK. The registry decodes a
     // RECEIPT, whose logs are numbered within that one transaction. Passing the
@@ -127,6 +150,8 @@ export async function POST(): Promise<NextResponse> {
         emitter: AAVE_POOL_SEPOLIA,
         topic0: REPAY_TOPIC,
         subject,
+        reserveAsset,
+        reserveMatchesPin: reserveAsset.toLowerCase() === PINNED_RESERVE,
       },
       proof: {
         headerNumber: headerNumber.toString(),
