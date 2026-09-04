@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useAccount, useConnect } from 'wagmi';
+import { useAccount, useConnect, useReadContract } from 'wagmi';
+import { parseAbi } from 'viem';
+import { DEPLOYED } from '@vouch/config';
 import { SectionHeading, Metric, Panel, Section, StandingBadge } from '@vouch/ui';
 
 /**
@@ -22,16 +24,37 @@ import { SectionHeading, Metric, Panel, Section, StandingBadge } from '@vouch/ui
 const TIER_NAMES = ['Unproven', 'Bronze', 'Silver', 'Gold'] as const;
 const COLLATERAL_BPS = [15_000, 13_000, 11_500, 10_000] as const;
 
+const PASSPORT_ABI = parseAbi(['function tierOf(address user) view returns (uint8)']);
+
+/**
+ * Read straight from the deployed passport on CC3.
+ *
+ * This market shares nothing with the registry -- no storage, no registration,
+ * no privileged relationship. One address and one view call is the entire
+ * integration, which is the claim this application exists to make checkable.
+ */
+const PASSPORT = DEPLOYED['cc3-testnet'].passport;
+
 export default function DemoCredit() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const [amount, setAmount] = useState(10_000);
 
-  // Without a deployed registry there is no standing to read. Showing the
-  // baseline is honest; inventing a tier to make the demo look better would be
-  // exactly the fabrication this protocol exists to remove.
-  const tier = 0;
-  const bps = COLLATERAL_BPS[tier];
+  // The live read. An unconnected visitor, an unproven address and an
+  // unreachable node all resolve to the baseline tier -- which is the honest
+  // answer in each case, because unproven is unknown rather than clean.
+  // Inventing a tier to make the screen look better would be exactly the
+  // fabrication this protocol exists to remove.
+  const { data: onChainTier, isLoading: readingTier } = useReadContract({
+    address: PASSPORT ?? undefined,
+    abi: PASSPORT_ABI,
+    functionName: 'tierOf',
+    args: address ? [address] : undefined,
+    query: { enabled: Boolean(address && PASSPORT) },
+  });
+
+  const tier = typeof onChainTier === 'number' ? onChainTier : 0;
+  const bps = COLLATERAL_BPS[tier] ?? COLLATERAL_BPS[0];
   const required = (amount * bps) / 10_000;
   const baseline = (amount * COLLATERAL_BPS[0]) / 10_000;
 
@@ -66,7 +89,10 @@ export default function DemoCredit() {
               Borrow amount
             </label>
             <StandingBadge state={tier > 0 ? 'proven' : 'unknown'}>
-              {TIER_NAMES[tier]}
+              {/* While the read is in flight the badge says so. Rendering the
+                  baseline tier during a load would state a conclusion the
+                  contract has not answered yet. */}
+              {readingTier ? 'Reading Creditcoin…' : TIER_NAMES[tier]}
             </StandingBadge>
           </div>
 
