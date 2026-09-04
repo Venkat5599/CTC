@@ -107,13 +107,31 @@ jobs:
             alias: vouch-demo-credit.vercel.app
             project_id_secret: VERCEL_PROJECT_ID_DEMO
     steps:
+      # Vercel deployment needs a token this repository may not have. Rather
+      # than let four jobs fail red on every push -- which trains everyone to
+      # ignore a red CD and hides the failures that matter -- check for the
+      # secret first and skip the rest of the job with a notice when it is
+      # absent. A deploy that cannot authenticate is not a broken build.
+      - name: Check for a deployment token
+        id: token
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=${{ matrix.app }}::VERCEL_TOKEN is not set, so this app was not deployed. Set it in repository secrets to enable automatic deployment; until then the frontends ship from the CLI."
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.token.outputs.present == 'true'
 
       - uses: actions/setup-node@v4
+        if: steps.token.outputs.present == 'true'
         with:
           node-version: 22
 
       - name: Install Vercel CLI
+        if: steps.token.outputs.present == 'true'
         run: npm install --global vercel@latest
 
       # A pull request gets a preview URL; master gets production. Same command,
@@ -130,6 +148,7 @@ jobs:
       # wrong tree.
       - name: Deploy
         id: deploy
+        if: steps.token.outputs.present == 'true'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
@@ -145,7 +164,16 @@ jobs:
           # empty string and the alias step then aliased nothing.
           url=$(grep -oE 'https://[a-z0-9.-]+\.vercel\.app' deploy.out | tail -1)
           if [ -z "$url" ]; then
-            echo "::error title=${{ matrix.app }}::Deploy produced no URL."
+            # The usual cause is an OAuth token rather than a project token.
+            # An OAuth token passes `vercel whoami` and is then rejected by every
+            # project API, so it cannot be validated up front -- the deploy is
+            # the first place it fails, and the CLI's message does not say which
+            # kind of token it wanted.
+            if grep -q "not valid" deploy.out; then
+              echo "::error title=${{ matrix.app }}::VERCEL_TOKEN was rejected. Mint a token at vercel.com/account/tokens and set it as the VERCEL_TOKEN repository secret -- an OAuth token will not work here. To turn automatic deployment off instead, set the VERCEL_ENABLED repository variable to false and ship the frontends from the CLI."
+            else
+              echo "::error title=${{ matrix.app }}::Deploy produced no URL."
+            fi
             cat deploy.out
             exit 1
           fi
@@ -158,7 +186,7 @@ jobs:
       # deployed and the public link still served the previous build, which is
       # the most confusing possible failure: everything green, nothing changed.
       - name: Point the stable domain at this deployment
-        if: github.event_name != 'pull_request'
+        if: steps.token.outputs.present == 'true' && github.event_name != 'pull_request'
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets[matrix.project_id_secret] }}
