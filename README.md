@@ -23,6 +23,11 @@
   <em>Verify once. Underwrite everywhere.</em>
 </p>
 
+<p align="center">
+  <sub>Artwork is illustrative. Standing is a proven fact about an event —<br>
+  never a score, a reputation, or an identity.</sub>
+</p>
+
 ---
 
 ## 📋 Project Overview
