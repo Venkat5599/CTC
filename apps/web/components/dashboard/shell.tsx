@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { Sidebar } from "@/components/vouch/sidebar";
+import { TopBar } from "@/components/dashboard/topbar";
 
 /**
  * Application shell.
@@ -28,7 +29,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <Sidebar />
 
       <main id="main-content" className="relative z-10 lg:pl-[248px]">
-        <div className="mx-auto w-full max-w-[1120px] px-5 py-14 sm:px-10 sm:py-20">{children}</div>
+        <TopBar />
+        {/*
+          Density over canvas. An underwriter should be able to see a complete
+          registry record without scrolling past decorative whitespace, so the
+          padding here is deliberately tighter than a marketing page would use
+          and the column is wider.
+        */}
+        <div className="mx-auto w-full max-w-[1320px] px-5 py-8 sm:px-8">
+          {children}
+        </div>
       </main>
     </div>
   );

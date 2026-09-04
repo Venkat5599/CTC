@@ -240,22 +240,35 @@ input:-webkit-autofill:active {
 
 :root,
 .dark {
-  --vouch-bg: #080808;
-  --vouch-surface: #111111;
-  --vouch-surface-raised: #161616;
-  --vouch-border: #202020;
-  --vouch-border-strong: #2c2c2c;
+  /*
+   * Institutional Credit Infrastructure palette.
+   *
+   * Tonal tiering, not shadows: depth comes from four surface steps and a 1px
+   * hairline, so nothing on this page floats on a blur. Emerald is the only
+   * accent that means "verified"; amber means "attested but not proven", and
+   * crimson means rejected. A value never wears the accent unless it actually
+   * moved -- colour here is a claim about state, not decoration.
+   */
+  --vouch-bg: #0c0e10;
+  --vouch-surface: #1a1c1e;
+  --vouch-surface-raised: #1e2022;
+  --vouch-surface-high: #282a2c;
+  --vouch-border: #21262d;
+  --vouch-border-strong: #3c4a42;
 
-  --vouch-primary: #b7f34d;
-  --vouch-success: #72f5a1;
-  --vouch-danger: #ff6b6b;
-  --vouch-warning: #f5c451;
+  --vouch-primary: #4edea3;
+  --vouch-primary-strong: #10b981;
+  --vouch-on-primary: #003824;
+  --vouch-success: #4edea3;
+  --vouch-warning: #ffb95f;
+  --vouch-danger: #ffb4ab;
 
-  --vouch-text: #fafafa;
-  --vouch-text-muted: #a1a1a1;
-  --vouch-text-faint: #6b6b6b;
+  --vouch-text: #e2e2e5;
+  --vouch-text-muted: #bbcabf;
+  --vouch-text-faint: #86948a;
 
-  --vouch-radius: 12px;
+  --vouch-radius: 6px;
+  --vouch-radius-sm: 4px;
 }
 
 /* ---------------------------------------------------------------------------

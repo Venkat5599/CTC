@@ -54,15 +54,17 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Overview",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: Gauge },
-      { href: "/explorer", label: "Explorer", icon: MagnifyingGlass },
+      { href: "/create", label: "Create standing", icon: ArrowsLeftRight },
+      { href: "/borrowers", label: "Borrowers", icon: IdentificationBadge },
       { href: "/proofs", label: "Proofs", icon: ShieldCheck },
+      { href: "/explorer", label: "Registry", icon: MagnifyingGlass },
     ],
   },
   {
-    label: "Applications",
+    label: "Credit",
     items: [
+      { href: "/credit", label: "Credit decisions", icon: Receipt },
       { href: "/apps", label: "Applications", icon: Stack },
-      { href: "/credit", label: "Credit", icon: Receipt },
     ],
   },
   {

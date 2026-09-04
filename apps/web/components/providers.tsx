@@ -2,7 +2,9 @@
 
 import { ReducedMotionProvider } from "@/lib/motion";
 import { SmoothScroll } from "@/components/smooth-scroll";
+import { RainbowKitProvider, darkTheme } from "@rainbow-me/rainbowkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@rainbow-me/rainbowkit/styles.css";
 import { ThemeProvider } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
@@ -44,7 +46,26 @@ export function Providers({ children }: { children: ReactNode }): ReactNode {
       <ReducedMotionProvider>
         <WagmiProvider config={wagmiConfig}>
           <QueryClientProvider client={queryClient}>
-            <SmoothScroll>{children}</SmoothScroll>
+            {/*
+              RainbowKit is themed to the app rather than the reverse. Its
+              default accent is a saturated blue that belongs to no palette
+              here, and a wallet modal that looks like a different product
+              undermines the one thing this interface is selling.
+
+              `modalSize="compact"` because connecting is a step on the way to
+              something, never the point of the page.
+            */}
+            <RainbowKitProvider
+              modalSize="compact"
+              theme={darkTheme({
+                accentColor: "#4edea3",
+                accentColorForeground: "#003824",
+                borderRadius: "small",
+                overlayBlur: "small",
+              })}
+            >
+              <SmoothScroll>{children}</SmoothScroll>
+            </RainbowKitProvider>
           </QueryClientProvider>
         </WagmiProvider>
       </ReducedMotionProvider>
