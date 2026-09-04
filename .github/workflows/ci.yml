@@ -43,6 +43,20 @@ jobs:
       - name: Gas report
         run: forge test --gas-report --match-path "packages/contracts/test/Gas.t.sol"
 
+      # The unit suite proves the logic is right. This proves the thing that is
+      # actually DEPLOYED is doing what the README says -- no mock, no fixture,
+      # forked against Creditcoin CC3 and reading the live contracts at their
+      # published addresses. It fails if a documented address, a registered
+      # source, or the one proven fact ever drifts from the chain.
+      #
+      # continue-on-error because a public RPC being briefly unreachable is not
+      # a defect in the commit under test. A genuine drift still shows as a
+      # failed step in the run, and the unit suite above stays blocking.
+      - name: Live contracts (forked CC3)
+        continue-on-error: true
+        run: |
+          forge test --match-contract LiveTest             --fork-url https://rpc.cc3-testnet.creditcoin.network -vv
+
   security-invariants:
     name: security invariants
     runs-on: ubuntu-latest

@@ -165,7 +165,7 @@ than showing invented data.
 
 | Component | State |
 |---|---|
-| `VouchRegistry` (ASC) | Deployed to CC3 Testnet — 87 contract tests passing, 0 failed |
+| `VouchRegistry` (ASC) | Deployed to CC3 Testnet — 95 contract tests passing, 0 failed — 8 of them against the live deployment |
 | `VouchPassport` | Deployed, tested (17 registry + passport tests) |
 | `VouchCredit` (consumer 1 — lending) | Deployed, tested |
 | `VouchFeeTier` (consumer 2 — DEX fees) | Deployed, tested |
@@ -176,6 +176,7 @@ than showing invented data.
 | Deploy + source-config scripts | Implemented, run against CC3 Testnet |
 | CI (build, fmt, S1/S2/S3, secret scan) | Implemented |
 | Gas benchmark | Implemented, 5 tests — numbers below |
+| Live contract tests | 8 tests against the **deployed** contracts on CC3, no mock — `forge test --match-contract LiveTest --fork-url https://rpc.cc3-testnet.creditcoin.network` |
 | Batch packer | Implemented, 13 tests |
 | Proof-request pipeline | Implemented, 7 tests |
 | Indexer | Implemented, typechecked — not yet run against mainnet |
