@@ -86,7 +86,20 @@ try {
     ccPub.readContract({ address: env.NAIVE_CONSUMER_ADDRESS, abi: NAIVE_ABI, functionName: 'proofValue', args: [subject, AAVE_REPAYMENT] }),
   ]);
   console.log(`   ACCEPTED. hasProof=${has}  credited=${Number(val) / 1e6} USDC that never moved.`);
-} catch (e) { console.log(`   naive rejected unexpectedly: ${e.shortMessage ?? e.message}`); }
+} catch (e) {
+  const m = e.shortMessage ?? e.message;
+  if (m.includes('AlreadyConsumed')) {
+    // Not a refutation. The naive consumer guards replay correctly -- it fell
+    // for S2 the FIRST time this proof was submitted and remembers the key.
+    // Emit a fresh forged event and prove that one; each transaction is a
+    // separate proof key and can only be credited once.
+    console.log('   ALREADY CONSUMED. This proof was submitted before, so the');
+    console.log('   naive consumer refuses it on replay rather than on authorship.');
+    console.log('   Emit a fresh event and rerun -- the S2 result needs an unused proof.');
+    process.exit(4);
+  }
+  console.log(`   naive rejected unexpectedly: ${m}`);
+}
 
 console.log('\n3. Submitting the IDENTICAL bytes to VouchRegistry...');
 console.log(`   fingerprint unchanged: ${keccak256(txBytes) === fingerprint}`);
