@@ -308,6 +308,15 @@ jobs:
             echo "| Target | Result |"
             echo "|---|---|"
             echo "| Frontends | ${{ needs.frontends.result }} |"
+            if [ "${{ needs.frontends.result }}" = "skipped" ]; then
+              echo
+              echo "Frontends were **not** deployed by this run: the"
+              echo "\`VERCEL_ENABLED\` repository variable is false. They ship"
+              echo "from the CLI instead. Set that variable to \`true\` and give"
+              echo "\`VERCEL_TOKEN\` a token minted at vercel.com/account/tokens"
+              echo "to deploy them here -- an OAuth token is rejected by the"
+              echo "project API even though it passes \`vercel whoami\`."
+            fi
             echo "| Service images | ${{ needs.images.result }} |"
             echo
             echo "Contracts are **not** deployed by this workflow. Source"
