@@ -25,6 +25,7 @@ const ABI = parseAbi([
   "function collateralBpsFor(address) view returns (uint16)",
   "function feeBpsFor(address) view returns (uint16)",
   "function isAdmitted(address) view returns (bool)",
+  "function advanceRateBpsFor(address) view returns (uint16)",
 ]);
 
 export interface ConsumerRead {
@@ -42,7 +43,7 @@ export interface ConsumerRead {
 }
 
 /** Baselines, so "moved" is a comparison rather than an assertion. */
-const BASELINE = { collateralBps: 15_000, feeBps: 30 } as const;
+const BASELINE = { collateralBps: 15_000, feeBps: 30, advanceRateBps: 7_000 } as const;
 
 export function useConsumers(subject?: string) {
   return useQuery<ConsumerRead[]>({
@@ -56,7 +57,13 @@ export function useConsumers(subject?: string) {
       // A single undeployed consumer must not blank the whole panel.
       const read = async (
         address: `0x${string}` | null,
-        functionName: "totalProofs" | "tierOf" | "collateralBpsFor" | "feeBpsFor" | "isAdmitted",
+        functionName:
+          | "totalProofs"
+          | "tierOf"
+          | "collateralBpsFor"
+          | "feeBpsFor"
+          | "isAdmitted"
+          | "advanceRateBpsFor",
       ) => {
         if (!address) return null;
         try {
@@ -71,12 +78,13 @@ export function useConsumers(subject?: string) {
         }
       };
 
-      const [proofs, tier, collateral, fee, admitted] = await Promise.all([
+      const [proofs, tier, collateral, fee, admitted, advanceRate] = await Promise.all([
         read(addresses.registry, "totalProofs"),
         read(addresses.passport, "tierOf"),
         read(addresses.credit, "collateralBpsFor"),
         read(addresses.feeTier, "feeBpsFor"),
         read(addresses.access, "isAdmitted"),
+        read(addresses.receivables, "advanceRateBpsFor"),
       ]);
 
       const tierNum = typeof tier === "number" ? tier : 0;
@@ -120,6 +128,19 @@ export function useConsumers(subject?: string) {
               : "Baseline collateral. No repayment proven.",
           moved: collateral !== null && Number(collateral) < BASELINE.collateralBps,
           address: addresses.credit,
+        },
+        {
+          key: "receivables",
+          contract: "VouchReceivablesFacility",
+          call: "advanceRateBpsFor(address)",
+          reads: "Repayment history",
+          value: advanceRate === null ? null : `${Number(advanceRate) / 100}%`,
+          meaning:
+            Number(advanceRate) > BASELINE.advanceRateBps
+              ? `Advance rate against invoice face value, up from ${BASELINE.advanceRateBps / 100}% for an unknown counterparty. No collateral and no liquidation path — with nothing to seize, proven history is the underwriting input rather than a discount on posted capital.`
+              : "Opening advance rate. Financeable without proven history, at a wider haircut.",
+          moved: advanceRate !== null && Number(advanceRate) > BASELINE.advanceRateBps,
+          address: addresses.receivables,
         },
         {
           key: "access",

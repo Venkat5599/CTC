@@ -1,10 +1,14 @@
 # Vouch
 
-**Portable On-Chain Standing.**
+**An underwriting primitive for tokenized credit.**
 
-> Attestcoin proves the fact. Vouch makes the fact reusable. Applications decide what the fact is worth.
+> A valid Attestcoin proof can still be a lie — at the consumer layer, which is where credit facts are actually decided.
 
-Prove what you've done on a supported chain once. Let every Creditcoin application recognize it.
+**Read this before the rest.** The claim above is demonstrated against a **mocked** Block Prover precompile. `SpoofEmitter` has not been deployed to Sepolia and no forged proof has gone through the live prover. If the real attester layer binds the emitting contract in a way the mock does not model, this thesis weakens and the tests are confirming an assumption we encoded ourselves. Closing that is the top item in [`docs/PRD.md`](docs/PRD.md). The finding is a **consumer-layer footgun, not an Attestcoin vulnerability** — the inclusion proof does exactly what it claims.
+
+You are an issuer extending credit on Creditcoin, and you cannot see what the borrower did anywhere else. An operator's attestation is a claim. Vouch hands you a cryptographic proof instead - that this address repaid an Aave loan on Ethereum - verified once through the Attestcoin Protocol and readable from your contract for the cost of a storage read.
+
+**Track: RWA.** BUIDL CTC 2026 Fall. Verified borrower history is an underwriting input, not a DeFi yield feature - real-world credit for underbanked borrowers is Creditcoin's own 2017 thesis. Canonical positioning lives in [`docs/PRD.md`](docs/PRD.md); the system design and threat model in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ```
                  ETHEREUM
@@ -35,13 +39,13 @@ Prove what you've done on a supported chain once. Let every Creditcoin applicati
               CREDITCOIN
 ```
 
-Built for **BUIDL CTC 2026 Fall** — track: DeFi.
+Built for **BUIDL CTC 2026 Fall** — track: RWA.
 
 ---
 
 ## What this is
 
-A shared standing registry for Creditcoin. It proves facts about a user's activity on a source chain through the Attestcoin Protocol, stores them permanently on-chain, and exposes them to every Creditcoin application through one interface.
+A shared standing registry for Creditcoin, written for the party doing the underwriting. It proves facts about a borrower's activity on a source chain through the Attestcoin Protocol, stores them permanently on-chain, and exposes them to every issuer on the chain through one interface. You do not run the proving. You read the result.
 
 ```solidity
 if (IVouchRegistry(VOUCH).hasProof(user, FactTypes.AAVE_REPAYMENT)) {
@@ -52,6 +56,10 @@ if (IVouchRegistry(VOUCH).hasProof(user, FactTypes.AAVE_REPAYMENT)) {
 That is the entire integration. No ASC to write, no off-chain worker to run, no proof gas to pay.
 
 **Credit is the flagship use case, not the entire product.** `VouchCredit` is one consumer of many.
+
+### Why the issuer and not the borrower
+
+A borrower-facing "portable credit score" is a well-explored dead end - five prior on-chain credit-score projects, no survivors. The framing fails because the borrower is not the party with the unmet problem. The issuer is: a regulated RWA platform or a licensed fiat anchor underwrites a borrower it cannot see, against history held by an institution it has no relationship with. That is the party who needs a proof rather than an assertion, and that is who this repository is addressed to.
 
 ---
 
@@ -86,13 +94,14 @@ demo proves a repayment we had no hand in.
 | Continuity proof | 89 roots |
 | Gas | 565,420 |
 
-Three unrelated consumers then read that one fact and grant three different
+Four unrelated consumers then read that one fact and grant four different
 things:
 
 | Consumer | Reads | Result |
 |---|---|---|
 | `VouchPassport` | repayment count | Tier 1 |
 | `VouchCredit` | repayment history | 130% collateral, down from 150% |
+| `VouchReceivablesFacility` | repayment history | **80%** advance rate, up from 70% |
 | `VouchAccess` | any registered fact | gate open |
 | `VouchFeeTier` | **supply** history | 0.30%, unchanged |
 
@@ -115,6 +124,7 @@ cast call 0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329   "hasProof(address,bytes32
 | `VouchCredit` | [`0x68e495fd...cccb3622`](https://creditcoin-testnet.blockscout.com/address/0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622) |
 | `VouchFeeTier` | [`0xf1ed0bc7...f70f3bd8`](https://creditcoin-testnet.blockscout.com/address/0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8) |
 | `VouchAccess` | [`0x46ecf42f...bd8f64be`](https://creditcoin-testnet.blockscout.com/address/0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be) |
+| `VouchReceivablesFacility` | [`0x33652813...ea915553`](https://creditcoin-testnet.blockscout.com/address/0x33652813fe9fb069b41b3de674405608ea915553) |
 
 Three fact types registered against Sepolia (`chainKey 1`): Aave `Repay`, Aave
 `Supply`, and Governor `VoteCast`. Read them back yourself:
@@ -137,27 +147,30 @@ registry only lands if the consumer looks like somebody else's product, which it
 is: no shared storage, no registration, no privileged relationship. Just an
 address and a view call.
 
-Contracts are not yet deployed, so every surface reads an empty registry and
-says so plainly rather than showing invented data.
+Every surface reads the deployed registry live. Nothing on any page is a
+fixture: an address with no proven history renders as empty and says so, rather
+than showing invented data.
 
 ## Status
 
 | Component | State |
 |---|---|
-| `VouchRegistry` (ASC) | Implemented, 52 contract tests passing |
-| `VouchPassport` | Implemented, tested |
-| `VouchCredit` (consumer 1 — lending) | Implemented, tested |
-| `VouchFeeTier` (consumer 2 — DEX fees) | Implemented, tested |
-| `VouchAccess` (consumer 3 — access gate) | Implemented, tested |
-| Security: S1 / S2 / S3 | Implemented, 21 tests proving each attack is rejected |
-| Deploy + source-config scripts | Implemented, dry-run clean |
+| `VouchRegistry` (ASC) | Deployed to CC3 Testnet — 87 contract tests passing, 0 failed |
+| `VouchPassport` | Deployed, tested (17 registry + passport tests) |
+| `VouchCredit` (consumer 1 — lending) | Deployed, tested |
+| `VouchFeeTier` (consumer 2 — DEX fees) | Deployed, tested |
+| `VouchAccess` (consumer 3 — access gate) | Deployed, tested |
+| `VouchReceivablesFacility` (consumer 4 — RWA) | Deployed to CC3 Testnet, 19 tests |
+| Security: S1 / S2 / S3 | Implemented, 23 tests in `Security.t.sol` proving each attack is rejected |
+| Forgery harness (`SpoofEmitter` + `NaiveConsumer`) | Implemented, 11 tests — **against a mocked precompile; live run not yet done** |
+| Deploy + source-config scripts | Implemented, run against CC3 Testnet |
 | CI (build, fmt, S1/S2/S3, secret scan) | Implemented |
-| Gas benchmark | Implemented — numbers below |
+| Gas benchmark | Implemented, 5 tests — numbers below |
 | Batch packer | Implemented, 13 tests |
 | Proof-request pipeline | Implemented, 7 tests |
 | Indexer | Implemented, typechecked — not yet run against mainnet |
-| Deployment to CC3 Testnet | Not started |
-| Frontend | Not started |
+| Frontend | Deployed — https://vouch-registry.vercel.app |
+| Deck + demo video | Not started |
 
 **Measured gas.** A consumer read is flat at **~1,202 gas** regardless of how
 many consumers came before it, and 75 consumer reads trigger **zero** precompile
@@ -188,7 +201,9 @@ Enforced in `SourceValidator.validateAndExtract`: `receipt.receiptStatus != 1` r
 
 ### S2 — A valid proof of a lookalike event is still a valid proof
 
-Deploy this to Ethereum Mainnet:
+**This is the claim the whole submission rests on: a valid Attestcoin proof can still be a lie.**
+
+Deploy this to any supported source chain:
 
 ```solidity
 contract Spoof {
@@ -205,6 +220,50 @@ Call it. The transaction succeeds. `topic0` matches Aave's `Repay` exactly. The 
 **This is the most dangerous class in the design**, because nothing about the proof is wrong. The proof system is not compromised — the consuming contract simply failed to establish semantics.
 
 Enforced by pinning the emitter contract address in `SourceRegistry` and asserting it alongside `topic0` and `chainKey`.
+
+### The harness — S2 performed, not described
+
+The attack ships in the repository. Four pieces:
+
+| Piece | Where | Role |
+|---|---|---|
+| `SpoofEmitter.sol` | `src/attack/`, deploys to **Sepolia** | Emits `Repay` with Aave's exact signature and field layout. Not affiliated with Aave. |
+| `NaiveConsumer.sol` | `src/attack/`, deploys to CC3 | Verifies the proof, checks receipt status, guards replay — and never checks the emitter. |
+| `VouchRegistry` | CC3 | The real verifier: emitter-pinned, status-checked, replay-guarded. |
+| `scripts/attack/forge-fact.mjs` | — | Emits, proves through the real Block Prover, submits identical bytes to both. |
+
+```bash
+cd packages/contracts && forge test --match-contract ForgeryTest
+```
+
+**11 tests, 0 failed.** The load-bearing one is `test_forgery_sameBytesOppositeOutcomes`: it builds the proof once, fingerprints the payload, submits it to `NaiveConsumer` (accepted — a fabricated million-dollar repayment is credited), asserts the bytes were not altered, then submits the same object to `VouchRegistry` (reverts, `EmitterMismatch`).
+
+**`NaiveConsumer` is not a strawman.** It calls the same precompile through the same `AttestcoinVerifier` the registry uses, rejects reverted transactions (S1), and guards replay (S3) — all asserted by their own tests. It omits exactly one line:
+
+```solidity
+if (entry.address_ != src.emitter) revert EmitterMismatch(expected, actual);
+```
+
+That omission is the entire vulnerability, and `test_forgery_bothAgreeOnAGenuineRepayment` proves the two contracts agree on honest input, so the disagreement is about authorship and nothing else.
+
+**Scope of the claim, bounded.** This proves *a valid Attestcoin proof of a lookalike event is accepted by a consumer that verifies the proof, checks status and guards replay but does not pin the emitter*. It does **not** prove Attestcoin is broken — `test_forgery_anti_theProofItselfIsValid` asserts the proof verified correctly. Attestcoin answered its question right; the naive consumer asked the wrong question.
+
+**Live-run status.** The harness runs green against the mocked precompile. `scripts/attack/forge-fact.mjs` performs it against the real prover once `SpoofEmitter` is deployed to Sepolia; that deployment has not been made yet. The script states its own falsifier and exits non-zero if the claim fails.
+
+### Layer two — what `EmitterMismatch` does *not* fix
+
+Pinning the emitter closes S2. It does not make a proven fact economically meaningful, and pretending otherwise would repeat the exact mistake this project exists to name. Four attacks survive emitter pinning, listed because a reviewer will find them anyway:
+
+| Attack | Status |
+|---|---|
+| **Cross-chain address collision.** Same contract address on another EVM chain via CREATE2 or a matched deployer nonce, same `topic0`, genuine emitter match. | **Closed.** `VouchRegistry` pins `chainKey` and reverts `ChainKeyMismatch`. `chainKey` is Attestcoin's key space, not `chainId`. |
+| **Permissionless market self-dealing.** Deploy a worthless ERC-20, list it in an isolated Aave market, self-borrow and self-repay 1,000,000 units. The emitter is the *real* pool. The event is real. The proof is real. | **Open.** The reserve asset is not pinned and there is no value oracle. `proofValue` is denominated in a token nobody checked. |
+| **Wash repayment.** `repayer == user == attacker`, cycled to farm `proofCount`. Every field is genuine. | **Open.** Tier is a function of event count. This is the actual credit-scoring attack on a lender, and emitter pinning does nothing about it. |
+| **Semantic drift.** Aave's `Repay` carries `useATokens`; repaying with aTokens is not the same economic event as repaying with underlying. | **Open.** The flag is inside the log data and is not decoded or branched on. |
+
+The registry's own limitation section already says standing is optimistic-but-bounded. These are the specific reasons why. **A proven fact is a fact about an event, never a judgement about a counterparty** — the consumer decides what it is worth, and a consumer that treats `proofCount` as creditworthiness has made the layer-two version of the naive consumer's mistake.
+
+Mitigations for the two open economic attacks — pinning the reserve asset, and requiring `repayer != user` — are one `RegisteredSource` field and one validator line each. They are deliberately not shipped in this pass because doing it properly needs a value oracle, and asserting a fix we have not tested is the failure mode this repository was built to argue against. The end-to-end harness - a `SpoofEmitter` on Sepolia, a naive consumer that checks `topic0` alone, and the identical proof bytes submitted to both - is specified in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) section 7.6 and is not built yet. It will run on Sepolia and never on mainnet: a mainnet contract whose only purpose is emitting convincing fake Aave events is a live artifact built to deceive third parties, and `topic0` is not chain-specific, so nothing is lost by demonstrating it where it is safe.
 
 ### S3 — Replay
 

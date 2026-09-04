@@ -11,3 +11,7 @@ coverage/
 
 .vercel
 .env*.local
+
+# Local agent/skill tooling — not part of the project
+.agents/
+.claude/

@@ -1,8 +1,9 @@
 /**
  * Vouch SDK.
  *
- * Prove what you did on any supported chain once. Let every Creditcoin
- * application recognise it.
+ * Read verified borrower history from the Vouch registry. One Attestcoin proof
+ * of what a borrower actually did on another chain, readable by any Creditcoin
+ * issuer for the cost of a storage read.
  */
 export { VouchClient, createVouchClient, type VouchClientOptions } from './client';
 export { Registry, REGISTRY_ABI } from './registry';

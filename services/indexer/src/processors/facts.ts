@@ -1,35 +1,69 @@
-/**
- * Fact processor.
- *
- * Takes verified facts off the registry listener and writes them to Postgres.
- *
- * Every write here is an upsert keyed on `factId`, because the listener
- * deliberately re-reads an overlap behind its cursor and will hand the same
- * fact over more than once. Idempotence at this layer is what makes that
- * re-reading free, and re-reading is what stops a late-surfacing log being
- * missed forever.
- *
- * Nothing in this file decides anything. A fact arrives already verified by the
- * chain; the processor's entire job is to not lose it and not double-count it.
- */
-
 import { prisma, normalizeAddress, toAmountString } from '../database/client';
 import type { MirroredFact } from '../listeners/vouch-registry';
 
 export interface ProcessResult {
   written: number;
   alreadyPresent: number;
+  /// Facts the registry would not return. Counted, never written.
+  unresolved: number;
 }
 
-export async function processFacts(facts: readonly MirroredFact[]): Promise<ProcessResult> {
+/**
+ * The full fact as the registry stores it.
+ *
+ * `FactVerified` carries only (factId, subject, factType, value) -- it is an
+ * index, not a record. Every other column the Fact table requires (source
+ * chain, block, txHash, logIndex, emitter, payloadHash) exists ONLY on chain,
+ * so the indexer has to go and read it.
+ */
+export interface RegistryFact {
+  sourceChainKey: number;
+  blockNumber: bigint;
+  txHash: string;
+  logIndex: number;
+  emitter: string;
+  payloadHash: string;
+  verifiedAt: Date;
+}
+
+/** Reads the canonical fact from the registry. Returns null if absent. */
+export type FactReader = (factId: string) => Promise<RegistryFact | null>;
+
+/**
+ * Mirror verified facts into Postgres.
+ *
+ * WHY A READER IS REQUIRED, AND NOT OPTIONAL.
+ *
+ * The previous version of this function filled the columns the event does not
+ * carry with placeholders -- `sourceChainKey: 0`, `logIndex: 0`, `emitter: '0x'`,
+ * `payloadHash: '0x'`. Every row it wrote asserted that the fact came from chain
+ * 0 and was emitted by `0x`, and nothing anywhere said otherwise. That is the
+ * precise failure this protocol exists to argue against: a value that was never
+ * verified, stored in the shape of one that was, in a table an operator will
+ * later read as truth. `emitter` in particular is the S2 field -- writing `0x`
+ * into it inverts the meaning of the only column that distinguishes a real
+ * repayment from a self-issued one.
+ *
+ * So the reader is mandatory. A fact the registry will not return is counted as
+ * `unresolved` and left unwritten, because a missing row is recoverable on the
+ * next poll and a fabricated one is not.
+ */
+export async function processFacts(
+  facts: readonly MirroredFact[],
+  readFact: FactReader,
+): Promise<ProcessResult> {
   let written = 0;
   let alreadyPresent = 0;
+  let unresolved = 0;
 
   for (const fact of facts) {
-    const existing = await prisma.fact.findUnique({ where: { factId: fact.factId } });
+    const detail = await readFact(fact.factId);
 
-    if (existing) {
-      alreadyPresent += 1;
+    // Absent from the registry means the mirror is ahead of the node it reads,
+    // or reading a reorged block. Both resolve on a later poll. Writing a
+    // partial row now would make the gap permanent and invisible.
+    if (detail === null) {
+      unresolved += 1;
       continue;
     }
 
@@ -39,47 +73,60 @@ export async function processFacts(facts: readonly MirroredFact[]): Promise<Proc
     // failed to create would be orphaned, and a subject with no facts is not a
     // user at all -- there is no signup here, an address becomes a user the
     // moment something is proven about it.
-    await prisma.$transaction(async (tx) => {
-      await tx.user.upsert({
-        where: { address: subject },
-        create: { address: subject, totalProofs: 1 },
-        update: { totalProofs: { increment: 1 } },
+    //
+    // `create` is guarded by `factId` being the primary key rather than by a
+    // preceding `findUnique`: the read-then-write version raced two pollers
+    // against each other and double-counted `totalProofs`, because the check and
+    // the increment were separate round trips. Letting the unique constraint
+    // arbitrate makes the poller idempotent and safe to run more than once.
+    try {
+      await prisma.$transaction(async (tx) => {
+        await tx.user.upsert({
+          where: { address: subject },
+          create: { address: subject, totalProofs: 1 },
+          update: { totalProofs: { increment: 1 } },
+        });
+
+        await tx.fact.create({
+          data: {
+            factId: fact.factId,
+            subjectAddress: subject,
+            factType: fact.factType,
+            sourceChainKey: detail.sourceChainKey,
+            blockNumber: detail.blockNumber,
+            txHash: detail.txHash,
+            logIndex: detail.logIndex,
+            emitter: normalizeAddress(detail.emitter),
+            value: toAmountString(fact.value),
+            payloadHash: detail.payloadHash,
+            verifiedAt: detail.verifiedAt,
+            creditcoinTxHash: fact.creditcoinTxHash,
+          },
+        });
       });
 
-      await tx.fact.create({
-        data: {
-          factId: fact.factId,
-          subjectAddress: subject,
-          factType: fact.factType,
-          sourceChainKey: 0,
-          blockNumber: fact.creditcoinBlock,
-          txHash: fact.creditcoinTxHash,
-          logIndex: 0,
-          emitter: '0x',
-          // uint256 as a decimal string. Number() here would silently lose
-          // precision above 2^53 and store a wrong amount rather than fail.
-          value: toAmountString(fact.value),
-          payloadHash: '0x',
-          verifiedAt: new Date(),
-          creditcoinTxHash: fact.creditcoinTxHash,
-        },
-      });
-    });
-
-    written += 1;
+      written += 1;
+    } catch (error) {
+      if (isUniqueViolation(error)) {
+        alreadyPresent += 1;
+        continue;
+      }
+      throw error;
+    }
   }
 
-  return { written, alreadyPresent };
+  return { written, alreadyPresent, unresolved };
 }
 
-/**
- * Reconcile a subject's cached aggregates against the chain.
- *
- * The counters are denormalised for fast listing, which means they can drift.
- * They are recomputed from the facts table rather than incremented in place,
- * because a counter that can be wrong and a counter that can be recomputed are
- * different kinds of risk, and only one of them needs an alert.
- */
+/** Prisma's unique-constraint code. A duplicate factId is expected, not an error. */
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { code?: unknown }).code === 'P2002'
+  );
+}
+
 export async function reconcileUser(address: string): Promise<void> {
   const subject = normalizeAddress(address);
 
@@ -96,8 +143,6 @@ export async function reconcileUser(address: string): Promise<void> {
     where: { address: subject },
     data: {
       totalProofs: facts.length,
-      // Bounds only ever widen. Recomputing from the full set is correct in
-      // any submission order, including facts discovered out of sequence.
       firstSeenBlock: blocks.reduce((a, b) => (a < b ? a : b)),
       lastSeenBlock: blocks.reduce((a, b) => (a > b ? a : b)),
       syncedAt: new Date(),

@@ -243,9 +243,7 @@ contract RegistryTest is VouchTestBase {
     ///      become wrong again silently.
     function test_governanceVoteProvesStanding() public {
         vm.prank(ADMIN);
-        registry.registerSource(
-            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
-        );
+        registry.registerSource(FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1);
 
         _submitVote(ALICE, 42, 33_000_000, keccak256("gov1"));
 
@@ -256,9 +254,7 @@ contract RegistryTest is VouchTestBase {
     /// @notice Governance standing does not leak into credit or liquidity.
     function test_governanceIsItsOwnDomain() public {
         vm.prank(ADMIN);
-        registry.registerSource(
-            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
-        );
+        registry.registerSource(FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1);
 
         _submitVote(ALICE, 7, 33_000_010, keccak256("gov2"));
 
@@ -270,9 +266,7 @@ contract RegistryTest is VouchTestBase {
     /// @notice S2 still applies: a vote from an unregistered Governor is rejected.
     function test_governanceSpoofedGovernorIsRejected() public {
         vm.prank(ADMIN);
-        registry.registerSource(
-            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
-        );
+        registry.registerSource(FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1);
 
         bytes32[] memory topics = new bytes32[](2);
         topics[0] = EventSignatures.VOTE_CAST;
@@ -283,24 +277,18 @@ contract RegistryTest is VouchTestBase {
             ReceiptBuilder.one(ReceiptBuilder.log(IMPOSTOR, topics, abi.encode(uint256(1))))
         );
 
-        vm.expectRevert(
-            abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, GOVERNOR, IMPOSTOR)
-        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, GOVERNOR, IMPOSTOR));
         _submit(_claim(FactTypes.GOVERNANCE_ACTIVITY, 33_000_020, keccak256("gov3"), 0, encoded));
     }
 
-    function _submitVote(address voter, uint256 proposalId, uint64 blockNumber, bytes32 txHash)
-        internal
-    {
+    function _submitVote(address voter, uint256 proposalId, uint64 blockNumber, bytes32 txHash) internal {
         // IGovernor: VoteCast(address indexed voter, uint256 proposalId, ...).
         bytes32[] memory topics = new bytes32[](2);
         topics[0] = EventSignatures.VOTE_CAST;
         topics[1] = bytes32(uint256(uint160(voter)));
 
         bytes memory encoded = ReceiptBuilder.successful(
-            ReceiptBuilder.one(
-                ReceiptBuilder.log(GOVERNOR, topics, abi.encode(proposalId, uint8(1), uint256(100)))
-            )
+            ReceiptBuilder.one(ReceiptBuilder.log(GOVERNOR, topics, abi.encode(proposalId, uint8(1), uint256(100))))
         );
 
         _submit(_claim(FactTypes.GOVERNANCE_ACTIVITY, blockNumber, txHash, 0, encoded));

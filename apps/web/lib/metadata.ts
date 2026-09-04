@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "Vouch",
-  tagline: "Portable On-Chain Standing",
+  tagline: "An underwriting primitive for tokenized credit",
   description:
-    "A shared standing registry for Creditcoin. Prove what you have done on any supported chain once, and let every application recognise it.",
+    "A shared standing registry for Creditcoin issuers. Cryptographic proof of what a borrower actually did on another chain, verified once through Attestcoin and readable from your contract for the cost of a storage read.",
   url: "https://vouch-registry.vercel.app",
   ogImage: "/og-image.png",
   creator: "@vouch",
@@ -17,10 +17,12 @@ export const siteConfig = {
   keywords: [
     "Creditcoin",
     "Attestcoin",
+    "RWA",
+    "underwriting",
+    "tokenized credit",
     "cross-chain proofs",
-    "on-chain reputation",
-    "portable standing",
-    "DeFi",
+    "verified borrower history",
+    "credit issuer",
   ],
 } as const;
 

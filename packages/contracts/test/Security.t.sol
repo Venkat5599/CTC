@@ -121,16 +121,22 @@ contract SecurityTest is VouchTestBase {
     /// @dev Proofs are public data. Anyone watching the mempool can copy a
     ///      submitted proof and replay it. Without the guard, standing is
     ///      farmable from a single real repayment.
+    ///
+    ///      The replay is SKIPPED rather than reverted -- `verifiedCount` says
+    ///      nothing was written. The security property under test is that a
+    ///      replay cannot mint standing, and that is asserted directly on the
+    ///      count. Whether the call reverts is an API choice; whether standing
+    ///      moves is the invariant, and it does not.
     function test_S3_replayIsRejected() public {
         VouchTypes.FactClaim memory claim = _repayClaim(ALICE, 2_500e6, 20_000_020, keccak256("s3"));
 
-        _submit(claim);
+        assertEq(_submit(claim), 1, "first submission writes the fact");
         assertEq(registry.proofCount(ALICE, FactTypes.AAVE_REPAYMENT), 1, "first submission counts");
 
-        vm.expectRevert();
-        _submit(claim);
+        assertEq(_submit(claim), 0, "replay writes nothing");
 
         assertEq(registry.proofCount(ALICE, FactTypes.AAVE_REPAYMENT), 1, "replay must not increment");
+        assertEq(registry.factIdsOf(ALICE).length, 1, "and must not duplicate the factId");
     }
 
     /// @notice Replay by a different submitter is still a replay.
@@ -141,8 +147,51 @@ contract SecurityTest is VouchTestBase {
         _submit(claim);
 
         vm.prank(IMPOSTOR);
-        vm.expectRevert();
-        registry.submitBatch(_continuity(), _batch(claim));
+        uint256 written = registry.submitBatch(_continuity(), _batch(claim));
+
+        assertEq(written, 0, "a different submitter replaying gains nothing");
+        assertEq(registry.proofCount(BOB, FactTypes.AAVE_REPAYMENT), 1, "and BOB's standing is unchanged");
+    }
+
+    /// @notice One already-recorded claim must not discard the rest of a batch.
+    /// @dev The bug this test exists for: `_consume` reverted on a duplicate,
+    ///      which unwound the WHOLE batch. Submission is permissionless, so two
+    ///      relayers racing the same log is ordinary traffic -- and losing nine
+    ///      valid proofs plus their gas to one duplicate makes batching, the
+    ///      entire economic argument for this registry, unusable in production.
+    function test_S3_duplicateInABatchDoesNotDiscardTheOthers() public {
+        VouchTypes.FactClaim memory first = _repayClaim(ALICE, 100e6, 20_000_030, keccak256("dup-a"));
+        VouchTypes.FactClaim memory second = _repayClaim(BOB, 200e6, 20_000_031, keccak256("dup-b"));
+
+        // Someone else lands `first` before our batch arrives.
+        assertEq(_submit(first), 1, "the racing submitter wins that one");
+
+        uint256 written = registry.submitBatch(_continuity(), _batch(first, second));
+
+        assertEq(written, 1, "the duplicate is skipped, the fresh claim is written");
+        assertEq(registry.proofCount(ALICE, FactTypes.AAVE_REPAYMENT), 1, "no double count");
+        assertEq(registry.proofCount(BOB, FactTypes.AAVE_REPAYMENT), 1, "and BOB's proof survived the batch");
+    }
+
+    /// @notice A real failure anywhere in a batch still reverts all of it.
+    /// @dev The skip is narrow, and deliberately so. A duplicate is ordinary
+    ///      traffic; a spoofed emitter is an attack. Silently skipping the
+    ///      second would let an attacker slip a forged claim into an otherwise
+    ///      valid batch and have it ignored rather than surfaced.
+    function test_S3_skippingDuplicatesDoesNotSoftenRealFailures() public {
+        VouchTypes.FactClaim memory good = _repayClaim(ALICE, 100e6, 20_000_040, keccak256("mix-good"));
+
+        ReceiptBuilder.Log[] memory spoofed = ReceiptBuilder.one(
+            ReceiptBuilder.repayLog(IMPOSTOR, EventSignatures.AAVE_REPAY, USDC, IMPOSTOR, 1_000_000e6)
+        );
+        VouchTypes.FactClaim memory forged = _claim(
+            FactTypes.AAVE_REPAYMENT, 20_000_041, keccak256("mix-forged"), 0, ReceiptBuilder.successful(spoofed)
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.EmitterMismatch.selector, AAVE_POOL, IMPOSTOR));
+        registry.submitBatch(_continuity(), _batch(good, forged));
+
+        assertFalse(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "the whole batch unwound");
     }
 
     /// @notice Two distinct logs in the same transaction are two distinct facts.

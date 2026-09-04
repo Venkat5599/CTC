@@ -54,9 +54,20 @@ contract VouchRegistry is IVouchRegistry, ReplayGuard, SourceRegistry, ProofVali
     // ---------------------------------------------------------------------
 
     /// @notice Verify and store a batch of source-chain facts.
+    ///
+    /// @dev A claim whose fact is already on record is SKIPPED, not reverted.
+    ///      Submission is permissionless, so two relayers racing the same log is
+    ///      ordinary traffic rather than an error -- and reverting the batch on
+    ///      one duplicate would discard every other proof in it and burn the gas
+    ///      that built them. Anything the registry considers a real failure
+    ///      (unregistered source, wrong chain, reverted receipt, unpinned
+    ///      emitter, bad proof) still reverts the whole batch, because those are
+    ///      configuration or attack conditions and silence would hide them.
+    ///
     /// @param continuity Continuity proof shared by every claim in the batch.
     /// @param claims Up to MAX_BATCH_SIZE claims within a 1000-block window.
-    /// @return verifiedCount Number of facts newly written.
+    /// @return verifiedCount Facts newly written. Less than `claims.length` when
+    ///         the batch contained facts already on record.
     function submitBatch(VouchTypes.BatchContinuity calldata continuity, VouchTypes.FactClaim[] calldata claims)
         external
         override
@@ -87,7 +98,17 @@ contract VouchRegistry is IVouchRegistry, ReplayGuard, SourceRegistry, ProofVali
             revert VouchErrors.ChainKeyMismatch(src.chainKey, claim.chainKey);
         }
 
-        // 3. Bound the proof before it reaches the precompile. Continuity length
+        // 3. S3, checked EARLY. The factId is a pure function of the claim's own
+        //    fields, so a duplicate is knowable before any expensive work is
+        //    done. Checking here rather than after verification means a
+        //    already-recorded fact costs one SLOAD instead of a full precompile
+        //    call, and -- more importantly -- lets the rest of the batch
+        //    proceed. The write-side guard in step 8 still runs; this is a fast
+        //    path, not a replacement for it.
+        bytes32 factId = _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, claim.logIndex);
+        if (isVerified(factId)) return false;
+
+        // 4. Bound the proof before it reaches the precompile. Continuity length
         //    drives gas linearly and is attacker-influenced.
         _validateProofBounds(continuity.roots.length, claim.encodedTransaction.length);
 
@@ -106,8 +127,9 @@ contract VouchRegistry is IVouchRegistry, ReplayGuard, SourceRegistry, ProofVali
         (address subject, uint256 value, bytes32 payloadHash) =
             SourceValidator.validateAndExtract(claim.encodedTransaction, src, claim.logIndex, claim.txHash);
 
-        // 7. S3. Replay guard, keyed on the log and its fact type.
-        bytes32 factId = _factId(claim.chainKey, claim.blockNumber, claim.txHash, claim.factType, claim.logIndex);
+        // 7. S3, enforced. The step-3 check is a fast path that can go stale
+        //    within a single batch -- two claims naming the same log would both
+        //    pass it. This consume is the authority, and it still reverts.
         _consume(factId);
 
         // 8. Store.

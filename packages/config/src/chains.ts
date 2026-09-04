@@ -179,6 +179,8 @@ export interface DeployedAddresses {
   credit: `0x${string}` | null;
   feeTier: `0x${string}` | null;
   access: `0x${string}` | null;
+  /** RWA consumer. Reads repayment history, prices an invoice advance rate. */
+  receivables: `0x${string}` | null;
 }
 
 /**
@@ -193,6 +195,7 @@ export const DEPLOYED: Record<CreditcoinNetwork, DeployedAddresses> = {
     credit: '0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622',
     feeTier: '0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8',
     access: '0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be',
+    receivables: '0x33652813fe9fb069b41b3de674405608ea915553',
   },
   'cc3-mainnet': {
     registry: null,
@@ -200,6 +203,7 @@ export const DEPLOYED: Record<CreditcoinNetwork, DeployedAddresses> = {
     credit: null,
     feeTier: null,
     access: null,
+    receivables: null,
   },
 };
 

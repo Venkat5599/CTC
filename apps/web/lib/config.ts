@@ -16,9 +16,9 @@
 export const siteConfig = {
   // Brand
   name: "Vouch",
-  tagline: "Portable On-Chain Standing",
+  tagline: "An underwriting primitive for tokenized credit",
   description:
-    "Prove what you have done on any supported chain once. Let every Creditcoin application recognise it.",
+    "You are extending credit to an address you cannot see. Vouch turns another chain's history into a cryptographic fact your contract reads for the cost of a storage read.",
 
   // URLs
   url: "https://vouch-registry.vercel.app",
@@ -38,14 +38,14 @@ export const siteConfig = {
 };
 
 export const heroConfig = {
-  badge: "CC3 Testnet",
+  badge: "CC3 Testnet / RWA",
   headline: {
-    line1: "Prove it once.",
-    line2: "Every app reads it",
-    accent: "free.",
+    line1: "Underwrite the",
+    line2: "proof, not the",
+    accent: "claim.",
   },
   subheadline:
-    "A shared standing registry for Creditcoin. One Attestcoin proof, stored on chain, readable by every application for the cost of a storage read.",
+    "A shared standing registry for Creditcoin issuers. One Attestcoin proof of what a borrower actually did on another chain, stored once, readable from your contract for the cost of a storage read.",
   cta: {
     text: "Check an address",
     href: "/passport",
@@ -53,18 +53,18 @@ export const heroConfig = {
 };
 
 export const blurHeadlineConfig = {
-  text: "Attestcoin verification is priced against repetition. A lending market, an exchange and a game asking the same question of the same address pay three times for one answer. Vouch verifies once and stores the fact canonically, so the first consumer pays and every consumer after that reads a storage slot.",
+  text: "A valid Attestcoin proof can still be a lie -- at the consumer layer, where credit facts are actually decided. The precompile proves a transaction was included in a block, and it does that correctly. It does not prove the transaction succeeded, and it does not prove who authored the event inside it. Vouch pins the emitter, checks the receipt status and guards the replay. Pinning the emitter is not the end of it: the reserve asset is still unpinned and wash repayment is still unaddressed, and the README says so.",
 };
 
 export const testimonialsConfig = {
-  title: "Three protocol failure modes, each one silent",
+  title: "Three ways a valid proof lies, each one silent",
   autoplayInterval: 10000,
 };
 
 export const howItWorksConfig = {
   title: "How a fact becomes standing",
   description:
-    "Discovery finds the event, the scheduler batches it, Attestcoin proves it, and the registry stores it. Everything after that is a view call.",
+    "Discovery finds the borrower's event, the scheduler batches it, Attestcoin proves it, and the registry stores it. Everything the issuer does after that is a view call.",
   cta: {
     text: "Read the integration guide",
     href: "/developers",
@@ -120,8 +120,8 @@ export const securityConfig = [
   {
     id: "S2",
     title: "A valid proof of a lookalike event is still valid",
-    body: "An attacker deploys a contract emitting a byte-identical Repay naming themselves. Nothing about the proof is wrong. Only the pinned emitter address separates a real repayment from a self-issued one.",
-    test: "test_S2_spoofedEmitterIsRejected",
+    body: "An attacker deploys a contract emitting a byte-identical Repay naming themselves. Nothing about the proof is wrong -- Attestcoin verified it correctly. Only the pinned emitter address separates a real repayment from a self-issued one. The harness ships: SpoofEmitter and NaiveConsumer are in the repo, and one test feeds identical proof bytes to both contracts and asserts opposite outcomes. Against a mocked precompile; the live run is not done.",
+    test: "test_forgery_sameBytesOppositeOutcomes",
   },
   {
     id: "S3",
@@ -154,6 +154,13 @@ export const consumersConfig = [
     grants: "A gate that opens, permanently",
     note: "Configured by constructor argument. A fourth application is a deployment, not a new contract type.",
   },
+  {
+    name: "VouchReceivablesFacility",
+    domain: "Invoice financing (RWA)",
+    reads: "Repayment history",
+    grants: "Advance rate from 70% up to 90% of invoice face value",
+    note: "No collateral and no liquidation path. With nothing to seize, proven history stops being a discount lever and becomes the primary underwriting input.",
+  },
 ];
 
 /** Measured figures. */
@@ -171,14 +178,24 @@ export const metricsConfig = [
     note: "Measured across 75 consecutive reads of the same fact.",
   },
   {
-    value: "142",
+    value: "1",
     unit: "",
-    label: "Tests passing",
-    note: "52 Solidity, including one per attack the protocol must survive.",
+    label: "Proof, two opposite outcomes",
+    note: "test_forgery_sameBytesOppositeOutcomes: identical proof bytes accepted by a naive consumer and rejected by the registry. Against a mocked precompile; the live Sepolia run is not done.",
   },
 ];
 
 export const faqItems = [
+  {
+    question: "Why is this an RWA primitive rather than a DeFi feature?",
+    answer:
+      "Because removing liquidation inverts what history is worth. In over-collateralised DeFi lending the collateral does the underwriting -- if a position sours you liquidate it, and whether the borrower ever repaid anything before barely matters. Receivables financing has no liquidation path: the asset is a claim on an off-chain cash flow owed by a third party, and if it does not pay, the financier eats the loss. With nothing to seize, proven repayment history becomes the primary underwriting input rather than a discount lever. VouchReceivablesFacility is that consumer, and the claim is asserted in a test rather than a slogan.",
+  },
+  {
+    question: "If reading is free, what is the business?",
+    answer:
+      "Reading was never the scarce thing -- proving is. Attestcoin prices verification against repetition, and history older than about a day costs more than ten times what a recent transaction costs, so underwriting is permanently the expensive case. The registry is free to read; the product is resolving an address that has never been proven, sold per resolution. Pre-revenue and stated as such: see docs/BUSINESS.md, including what would falsify it.",
+  },
   {
     question: "What can Vouch not prove?",
     answer:
