@@ -52,8 +52,7 @@ When `PROVEN` appears:
 
 When `ACCEPTED` appears:
 
-> **"And that consumer just credited a one-million-dollar repayment that never
-> happened."**
+> **"And that consumer just credited a repayment that never happened."**
 
 When `REVERTED` appears — pause on it:
 
@@ -142,7 +141,7 @@ Pause here. This is the second most important line in the video.
 
 Back to the dashboard, or the deck's title.
 
-> **"Ninety-five tests, eight of them against the deployed contracts on a
+> **"A hundred and four tests, ten of them against the deployed contracts on a
 > forked chain. Six contracts live on CC3 Testnet. The forgery is in the
 > repository and it runs against the real prover."**
 
@@ -180,8 +179,8 @@ Say any of these if a judge asks; all are checkable during the video.
 |---|---|
 | Lookalike emitter | `0xBB0C0BeAF600B205d44f267E0D7586A543f609CF` on Sepolia |
 | Naive consumer | `0x791CbBCb6837F2eFbEbA77c7218C4695d3e17e82` on CC3 |
-| Registry | `0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329` on CC3 |
-| Proven subject | `0x83900c0EDA960A31899d51aae9B9C180A7e21711` |
+| Registry | `0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46` on CC3 (v2, S1–S5) |
+| Proven subject | `0x4c8EA5e41ed3dBe14a4cf0B79ACcb5e5D3Ab88F9` |
 | 1,202 gas per read | `Gas.t.sol`, measured not estimated |
-| 95 tests | `forge test` |
-| 8 live tests | `forge test --match-contract LiveTest --fork-url …` |
+| 104 tests | `forge test` |
+| 10 live tests | `forge test --match-contract LiveTest --fork-url …` |
