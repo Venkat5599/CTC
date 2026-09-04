@@ -99,6 +99,25 @@ library ReceiptBuilder {
     }
 
     /// @notice A log with a topic0 but no subject topic, for the malformed-log path.
+    /// A repayment somebody ELSE settled. topics[2] is the borrower whose debt
+    /// cleared; topics[3] is whoever paid. The two differ, which is what a
+    /// source with `requireDistinctPayer` demands.
+    function repayLogByThirdParty(
+        address emitter,
+        bytes32 topic0,
+        address reserve,
+        address user,
+        address payer,
+        uint256 amount
+    ) internal pure returns (Log memory) {
+        bytes32[] memory topics = new bytes32[](4);
+        topics[0] = topic0;
+        topics[1] = bytes32(uint256(uint160(reserve)));
+        topics[2] = bytes32(uint256(uint160(user)));
+        topics[3] = bytes32(uint256(uint160(payer)));
+        return Log({emitter: emitter, topics: topics, data: abi.encode(amount, false)});
+    }
+
     function shortLog(address emitter, bytes32 topic0) internal pure returns (Log memory) {
         bytes32[] memory topics = new bytes32[](1);
         topics[0] = topic0;

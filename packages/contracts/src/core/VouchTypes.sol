@@ -34,6 +34,32 @@ library VouchTypes {
         bytes32 factType;
         uint8 subjectTopicIndex;
         bool enabled;
+        /// Pinned reserve asset. `address(0)` accepts any asset, which is the
+        /// prior behaviour and stays the default.
+        ///
+        /// Closes permissionless-market self-dealing: deploy a worthless ERC-20,
+        /// list it in an isolated market, self-borrow and self-repay a million
+        /// units. The emitter is the real pool and the event is real, so emitter
+        /// pinning does not touch it -- but the repayment is denominated in a
+        /// token nobody registered. Pinning WHICH asset counts is an equality
+        /// check. Knowing what a repayment is WORTH needs a value oracle, and
+        /// that is still not attempted here.
+        address reserveAsset;
+        /// Topic carrying the asset. Read only when `reserveAsset != 0`.
+        uint8 assetTopicIndex;
+        /// Topic carrying whoever settled the debt. Read only when
+        /// `requireDistinctPayer` is set.
+        uint8 payerTopicIndex;
+        /// Reject when the payer IS the subject.
+        ///
+        /// Off by default, and that default is a judgement rather than caution:
+        /// an honest borrower repaying their own loan has `payer == subject`, so
+        /// enforcing this unconditionally would reject the ordinary case to stop
+        /// the adversarial one. It narrows what the fact MEANS -- "somebody else
+        /// settled this debt" is a different claim from "this was repaid" -- so
+        /// the registrar decides per source, and the registry only provides the
+        /// mechanism.
+        bool requireDistinctPayer;
     }
 
     /// @notice One claim within a batch submission.

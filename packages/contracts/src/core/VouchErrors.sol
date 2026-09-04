@@ -11,6 +11,10 @@ library VouchErrors {
     error SourceDisabled(bytes32 factType);
     error EmitterMismatch(address expected, address actual);
     error TopicMismatch(bytes32 expected, bytes32 actual);
+    error ReserveAssetMismatch(address expected, address actual);
+    error PayerIsSubject(address subject);
+    error AssetTopicMissing(uint8 assetTopicIndex, uint256 topicCount);
+    error PayerTopicMissing(uint8 payerTopicIndex, uint256 topicCount);
     error ChainKeyMismatch(uint64 expected, uint64 actual);
 
     // --- receipt validation (S1) ---

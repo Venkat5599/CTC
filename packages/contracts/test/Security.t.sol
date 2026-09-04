@@ -375,4 +375,165 @@ contract SecurityTest is VouchTestBase {
         assertTrue(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "standing accrues to the log subject");
         assertFalse(registry.hasProof(IMPOSTOR, FactTypes.AAVE_REPAYMENT), "submitter gains nothing");
     }
+
+    // =====================================================================
+    // S4 -- the reserve asset
+    //
+    // Emitter pinning proves the REAL pool emitted the event. It says nothing
+    // about what was repaid. Deploy a worthless ERC-20, list it in an isolated
+    // market, self-borrow and self-repay a million units: the emitter is real,
+    // the event is real, the proof is real, and every check before this one
+    // passes.
+    //
+    // Pinning WHICH asset counts is an equality check and needs no oracle.
+    // Knowing what a repayment is WORTH does, and is still not attempted.
+    // =====================================================================
+
+    function test_S4_unpinnedAssetIsRejected() public {
+        address worthless = address(0xDEADBEEF);
+
+        vm.prank(ADMIN);
+        registry.registerSourcePinned(
+            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2, USDC, 1, 3, false
+        );
+
+        VouchTypes.FactClaim memory claim = _claim(
+            FactTypes.AAVE_REPAYMENT,
+            20_100_001,
+            keccak256("s4-worthless"),
+            0,
+            ReceiptBuilder.successful(
+                ReceiptBuilder.one(
+                    ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, worthless, ALICE, 1_000_000e6)
+                )
+            )
+        );
+
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.ReserveAssetMismatch.selector, USDC, worthless));
+        _submit(claim);
+
+        assertFalse(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "a million worthless units mints nothing");
+    }
+
+    function test_S4_pinnedAssetIsAccepted() public {
+        vm.prank(ADMIN);
+        registry.registerSourcePinned(
+            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2, USDC, 1, 3, false
+        );
+
+        assertEq(_submit(_repayClaim(ALICE, 2_500e6, 20_100_002, keccak256("s4-usdc"))), 1);
+        assertTrue(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "a real USDC repayment still counts");
+    }
+
+    /// @dev The default is deliberately the prior behaviour. A registrar who
+    ///      wants the stronger guarantee opts in; nobody gets it by accident,
+    ///      and no working integration breaks on the upgrade.
+    function test_S4_unpinnedSourceStillAcceptsAnyAsset() public {
+        VouchTypes.FactClaim memory claim = _claim(
+            FactTypes.AAVE_REPAYMENT,
+            20_100_003,
+            keccak256("s4-any"),
+            0,
+            ReceiptBuilder.successful(
+                ReceiptBuilder.one(
+                    ReceiptBuilder.repayLog(AAVE_POOL, EventSignatures.AAVE_REPAY, address(0xDEAD), ALICE, 5e6)
+                )
+            )
+        );
+
+        assertEq(_submit(claim), 1, "no asset pinned, so no asset check");
+    }
+
+    // =====================================================================
+    // S5 -- wash repayment
+    //
+    // `payer == subject`, cycled to farm proofCount. Every field is genuine.
+    // =====================================================================
+
+    function test_S5_selfRepaymentIsRejectedWhenPinned() public {
+        vm.prank(ADMIN);
+        registry.registerSourcePinned(
+            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2, address(0), 0, 3, true
+        );
+
+        // _repayClaim builds a self-repayment: topics[2] and topics[3] both name
+        // the subject.
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.PayerIsSubject.selector, ALICE));
+        _submit(_repayClaim(ALICE, 1_000_000e6, 20_100_010, keccak256("s5-wash")));
+
+        assertFalse(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "a wash cycle mints nothing");
+    }
+
+    function test_S5_thirdPartyRepaymentIsAccepted() public {
+        vm.prank(ADMIN);
+        registry.registerSourcePinned(
+            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2, address(0), 0, 3, true
+        );
+
+        VouchTypes.FactClaim memory claim = _claim(
+            FactTypes.AAVE_REPAYMENT,
+            20_100_011,
+            keccak256("s5-third-party"),
+            0,
+            ReceiptBuilder.successful(
+                ReceiptBuilder.one(
+                    ReceiptBuilder.repayLogByThirdParty(
+                        AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, BOB, 2_500e6
+                    )
+                )
+            )
+        );
+
+        assertEq(_submit(claim), 1, "BOB settling ALICE's debt is a fact about ALICE");
+        assertTrue(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "and it accrues to ALICE");
+        assertFalse(registry.hasProof(BOB, FactTypes.AAVE_REPAYMENT), "not to the payer");
+    }
+
+    /// @dev An honest borrower repaying their own loan has payer == subject.
+    ///      Enforcing this everywhere would reject the ordinary case to stop the
+    ///      adversarial one, so a source opts in and the fact then means
+    ///      something narrower and stronger.
+    function test_S5_selfRepaymentIsAcceptedByDefault() public {
+        assertEq(_submit(_repayClaim(ALICE, 2_500e6, 20_100_012, keccak256("s5-default"))), 1);
+        assertTrue(registry.hasProof(ALICE, FactTypes.AAVE_REPAYMENT), "ordinary self-repayment still counts");
+    }
+
+    function test_S4_S5_pinsCompose() public {
+        vm.prank(ADMIN);
+        registry.registerSourcePinned(
+            FactTypes.AAVE_REPAYMENT, CHAIN_ETHEREUM, AAVE_POOL, EventSignatures.AAVE_REPAY, 2, USDC, 1, 3, true
+        );
+
+        VouchTypes.FactClaim memory good = _claim(
+            FactTypes.AAVE_REPAYMENT,
+            20_100_020,
+            keccak256("s45-good"),
+            0,
+            ReceiptBuilder.successful(
+                ReceiptBuilder.one(
+                    ReceiptBuilder.repayLogByThirdParty(
+                        AAVE_POOL, EventSignatures.AAVE_REPAY, USDC, ALICE, BOB, 2_500e6
+                    )
+                )
+            )
+        );
+        assertEq(_submit(good), 1, "right asset, distinct payer");
+
+        // Distinct payer, wrong asset. S4 catches it even though S5 passes.
+        VouchTypes.FactClaim memory badAsset = _claim(
+            FactTypes.AAVE_REPAYMENT,
+            20_100_021,
+            keccak256("s45-bad-asset"),
+            0,
+            ReceiptBuilder.successful(
+                ReceiptBuilder.one(
+                    ReceiptBuilder.repayLogByThirdParty(
+                        AAVE_POOL, EventSignatures.AAVE_REPAY, address(0xDEAD), ALICE, BOB, 2_500e6
+                    )
+                )
+            )
+        );
+        vm.expectRevert(abi.encodeWithSelector(VouchErrors.ReserveAssetMismatch.selector, USDC, address(0xDEAD)));
+        _submit(badAsset);
+    }
 }

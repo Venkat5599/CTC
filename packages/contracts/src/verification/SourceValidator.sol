@@ -88,6 +88,45 @@ library SourceValidator {
         }
         subject = address(uint160(uint256(entry.topics[src.subjectTopicIndex])));
 
+        // S4. The reserve asset, when the source pins one.
+        //
+        // Emitter pinning proves the REAL pool emitted this. It says nothing
+        // about what was repaid. An attacker lists a worthless ERC-20 in an
+        // isolated market, self-borrows and self-repays a million units, and
+        // every check above passes because every field is genuine.
+        //
+        // Pinning the asset is an equality check and needs no oracle. What it
+        // does NOT do is tell you the repayment was worth anything -- a pinned
+        // asset can still be repaid in a trivial amount, and `value` remains a
+        // number denominated in a token this contract cannot price.
+        if (src.reserveAsset != address(0)) {
+            if (entry.topics.length <= src.assetTopicIndex) {
+                revert VouchErrors.AssetTopicMissing(src.assetTopicIndex, entry.topics.length);
+            }
+            address asset = address(uint160(uint256(entry.topics[src.assetTopicIndex])));
+            if (asset != src.reserveAsset) {
+                revert VouchErrors.ReserveAssetMismatch(src.reserveAsset, asset);
+            }
+        }
+
+        // S5. Distinct payer, when the source requires one.
+        //
+        // Wash repayment is `payer == subject`, cycled to farm proofCount. Every
+        // field is genuine, so nothing above catches it.
+        //
+        // This is off unless a source opts in, and that is deliberate: an honest
+        // borrower repaying their own loan ALSO has `payer == subject`. Enforcing
+        // it everywhere would reject the ordinary case to stop the adversarial
+        // one. Where it is on, the fact means something narrower and stronger --
+        // somebody else settled this debt -- and the registrar chose that.
+        if (src.requireDistinctPayer) {
+            if (entry.topics.length <= src.payerTopicIndex) {
+                revert VouchErrors.PayerTopicMissing(src.payerTopicIndex, entry.topics.length);
+            }
+            address payer = address(uint160(uint256(entry.topics[src.payerTopicIndex])));
+            if (payer == subject) revert VouchErrors.PayerIsSubject(subject);
+        }
+
         // --- primary numeric value: first word of log data ---
         if (entry.data.length >= 32) {
             bytes memory data = entry.data;

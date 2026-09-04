@@ -15,17 +15,12 @@
   <a href="https://vouch-registry.vercel.app">
     <img src="https://img.shields.io/badge/▶_DEMO-vouch--registry-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live demo" />
   </a>
-  <img src="https://img.shields.io/badge/95_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="95 tests" />
+  <img src="https://img.shields.io/badge/102_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="95 tests" />
   <img src="https://img.shields.io/badge/Solidity-0.8.28-363636?style=for-the-badge&logo=solidity" alt="Solidity" />
 </p>
 
 <p align="center">
   <em>Verify once. Underwrite everywhere.</em>
-</p>
-
-<p align="center">
-  <sub>Artwork is illustrative. Standing is a proven fact about an event —<br>
-  never a score, a reputation, or an identity.</sub>
 </p>
 
 ---
@@ -231,22 +226,41 @@ All three are enforced in `VouchRegistry`. Each is a **revert**, not a warning.
 > which is per-**transaction**. One transaction can carry several qualifying
 > logs, so Vouch keys per-**log**.
 
-### What emitter pinning does **not** fix
+### Beyond the emitter — the economic attacks
 
-Pinning closes the forgery. It does not make a proven fact economically
-meaningful, and pretending otherwise would repeat the exact mistake this project
-exists to name.
+Pinning the emitter closes the forgery. It does not make a proven fact
+economically meaningful, so two more checks exist. Both are **opt-in per source**,
+because both narrow what a fact means and neither is free.
+
+| ID | The attack | Enforcement |
+|---|---|---|
+| **S4** | **Permissionless market self-dealing.** List a worthless ERC-20 in an isolated market, self-borrow, self-repay a million units. The pool is real, the event is real, the proof is real. | `reserveAsset` pinned in `RegisteredSource`; reverts `ReserveAssetMismatch` |
+| **S5** | **Wash repayment.** `payer == subject`, cycled to farm `proofCount`. Every field is genuine. | `requireDistinctPayer`; reverts `PayerIsSubject` |
+
+Pinning **which** asset counts is an equality check and needs no oracle. Knowing
+what a repayment is **worth** does, and is still not attempted — a pinned asset
+can be repaid in a trivial amount, and `proofValue` remains a number this
+contract cannot price.
+
+`requireDistinctPayer` is **off by default, and that default is a judgement**: an
+honest borrower repaying their own loan also has `payer == subject`. Enforcing it
+everywhere would reject the ordinary case to stop the adversarial one. Where a
+source turns it on, the fact means something narrower and stronger — *somebody
+else settled this debt*.
 
 | Attack | Status |
 |---|---|
-| Cross-chain address collision (same address, another chain) | ✅ **Closed** — `chainKey` pinned, reverts `ChainKeyMismatch` |
-| Permissionless market self-dealing (real pool, worthless token) | ⚠️ **Open** — reserve asset is not pinned, no value oracle |
-| Wash repayment (`repayer == user == attacker`, cycled) | ⚠️ **Open** — tier is a function of event count |
+| Cross-chain address collision | ✅ **Closed** — `chainKey` pinned, reverts `ChainKeyMismatch` |
+| Lookalike emitter (S2) | ✅ **Closed** — emitter pinned, demonstrated live |
+| Permissionless market self-dealing (S4) | ✅ **Closed where pinned** — 3 tests |
+| Wash repayment (S5) | ✅ **Closed where required** — 4 tests |
 | Semantic drift (`useATokens` not decoded) | ⚠️ **Open** — the flag is in the log data and is not branched on |
+| Economic **value** of a proven fact | ⚠️ **Open by design** — needs a price oracle. `proofValue` is a token amount, not a valuation. |
 
-Both open items need a value oracle to fix properly. **Asserting an untested fix
-is the failure mode this repository was built to argue against**, so they are
-documented rather than shipped.
+> ⚠️ **S4 and S5 are implemented and tested but not yet on the deployed
+> registry.** They change the `RegisteredSource` struct, so adopting them means a
+> new registry address — a deliberate step, not something to slip into a
+> hackathon week. The contracts at the addresses above still carry S1/S2/S3 only.
 
 ---
 
@@ -330,7 +344,7 @@ Five unrelated consumers then read that one fact:
 
 ```bash
 # The full suite
-forge test                                    # 95 passing, 0 failed
+forge test                                    # 102 passing, 0 failed
 
 # The forgery, against a mocked precompile
 forge test --match-contract ForgeryTest       # 11 tests
@@ -347,7 +361,7 @@ forge test --match-contract LiveTest \
 
 | Suite | Tests | What it proves |
 |---|---|---|
-| `Security.t.sol` | 23 | Each attack is rejected |
+| `Security.t.sol` | 30 | Each attack is rejected, S1–S5 |
 | `Receivables.t.sol` | 19 | The RWA consumer's terms |
 | `Registry.t.sol` | 17 | Storage, monotonicity, bounds |
 | `Consumers.t.sol` | 12 | Consumers are mutually ignorant |
@@ -501,7 +515,9 @@ because it would then prove the wrong log.
 - [x] 8 tests against the deployed contracts on a forked chain
 - [x] Interface deployed, live demo runs from the visitor's wallet
 - [ ] Demo video
-- [ ] Reserve-asset pinning (needs a value oracle)
+- [x] Reserve-asset pinning and wash-repayment guard (S4/S5) — implemented, 7 tests
+- [ ] Redeploy the registry carrying S4/S5
+- [ ] Value oracle, so `proofValue` means something
 - [ ] Mainnet deployment
 
 ---

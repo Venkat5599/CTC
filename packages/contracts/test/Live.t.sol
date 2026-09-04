@@ -129,7 +129,7 @@ contract LiveTest is Test {
         assertGt(fact.verifiedAt, 0, "carries a verification timestamp");
 
         // The source is the chain the registry pinned, not one the claim chose.
-        VouchTypes.RegisteredSource memory src = _sourceOf(FactTypes.AAVE_REPAYMENT);
+        DeployedSource memory src = _sourceOf(FactTypes.AAVE_REPAYMENT);
         assertEq(fact.emitter, src.emitter, "the stored emitter IS the pinned emitter");
         assertEq(fact.sourceChain, src.chainKey, "and the stored chain key IS the pinned one");
     }
@@ -220,7 +220,7 @@ contract LiveTest is Test {
         bytes32[] memory types = abi.decode(data, (bytes32[]));
         assertGt(types.length, 0, "at least one fact type registered");
 
-        VouchTypes.RegisteredSource memory repay = _sourceOf(FactTypes.AAVE_REPAYMENT);
+        DeployedSource memory repay = _sourceOf(FactTypes.AAVE_REPAYMENT);
         assertTrue(repay.emitter != address(0), "the repayment source has a pinned emitter");
         assertTrue(repay.enabled, "and it is enabled");
         assertTrue(repay.topic0 != bytes32(0), "and a pinned topic0");
@@ -232,9 +232,26 @@ contract LiveTest is Test {
 
     // =====================================================================
 
-    function _sourceOf(bytes32 factType) internal view returns (VouchTypes.RegisteredSource memory src) {
+    /// The source as the DEPLOYED registry returns it.
+    ///
+    /// Deliberately NOT `VouchTypes.RegisteredSource`. That type tracks local
+    /// source, which can be ahead of what is on chain -- adding the reserve-asset
+    /// and payer pins to it changed the ABI, and decoding the deployed
+    /// contract's older tuple into the newer type reverts. A test whose job is
+    /// to check a deployed artifact must not assume that artifact matches the
+    /// working tree.
+    struct DeployedSource {
+        uint64 chainKey;
+        address emitter;
+        bytes32 topic0;
+        bytes32 factType;
+        uint8 subjectTopicIndex;
+        bool enabled;
+    }
+
+    function _sourceOf(bytes32 factType) internal view returns (DeployedSource memory src) {
         (bool ok, bytes memory data) = REGISTRY.staticcall(abi.encodeWithSignature("getSource(bytes32)", factType));
         require(ok, "getSource failed");
-        src = abi.decode(data, (VouchTypes.RegisteredSource));
+        src = abi.decode(data, (DeployedSource));
     }
 }
