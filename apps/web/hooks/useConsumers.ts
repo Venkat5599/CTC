@@ -43,7 +43,11 @@ export interface ConsumerRead {
 }
 
 /** Baselines, so "moved" is a comparison rather than an assertion. */
-const BASELINE = { collateralBps: 15_000, feeBps: 30, advanceRateBps: 7_000 } as const;
+const BASELINE = {
+  collateralBps: 15_000,
+  feeBps: 30,
+  advanceRateBps: 7_000,
+} as const;
 
 export function useConsumers(subject?: string) {
   return useQuery<ConsumerRead[]>({
@@ -63,7 +67,7 @@ export function useConsumers(subject?: string) {
           | "collateralBpsFor"
           | "feeBpsFor"
           | "isAdmitted"
-          | "advanceRateBpsFor",
+          | "advanceRateBpsFor"
       ) => {
         if (!address) return null;
         try {
@@ -78,14 +82,15 @@ export function useConsumers(subject?: string) {
         }
       };
 
-      const [proofs, tier, collateral, fee, admitted, advanceRate] = await Promise.all([
-        read(addresses.registry, "totalProofs"),
-        read(addresses.passport, "tierOf"),
-        read(addresses.credit, "collateralBpsFor"),
-        read(addresses.feeTier, "feeBpsFor"),
-        read(addresses.access, "isAdmitted"),
-        read(addresses.receivables, "advanceRateBpsFor"),
-      ]);
+      const [proofs, tier, collateral, fee, admitted, advanceRate] =
+        await Promise.all([
+          read(addresses.registry, "totalProofs"),
+          read(addresses.passport, "tierOf"),
+          read(addresses.credit, "collateralBpsFor"),
+          read(addresses.feeTier, "feeBpsFor"),
+          read(addresses.access, "isAdmitted"),
+          read(addresses.receivables, "advanceRateBpsFor"),
+        ]);
 
       const tierNum = typeof tier === "number" ? tier : 0;
 
@@ -126,7 +131,8 @@ export function useConsumers(subject?: string) {
             Number(collateral) < BASELINE.collateralBps
               ? `Collateral required, down from ${BASELINE.collateralBps / 100}% baseline.`
               : "Baseline collateral. No repayment proven.",
-          moved: collateral !== null && Number(collateral) < BASELINE.collateralBps,
+          moved:
+            collateral !== null && Number(collateral) < BASELINE.collateralBps,
           address: addresses.credit,
         },
         {
@@ -139,7 +145,9 @@ export function useConsumers(subject?: string) {
             Number(advanceRate) > BASELINE.advanceRateBps
               ? `Advance rate against invoice face value, up from ${BASELINE.advanceRateBps / 100}% for an unknown counterparty. No collateral and no liquidation path — with nothing to seize, proven history is the underwriting input rather than a discount on posted capital.`
               : "Opening advance rate. Financeable without proven history, at a wider haircut.",
-          moved: advanceRate !== null && Number(advanceRate) > BASELINE.advanceRateBps,
+          moved:
+            advanceRate !== null &&
+            Number(advanceRate) > BASELINE.advanceRateBps,
           address: addresses.receivables,
         },
         {
