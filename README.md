@@ -9,13 +9,13 @@
 </p>
 
 <p align="center">
-  <a href="https://creditcoin-testnet.blockscout.com/address/0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329">
+  <a href="https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46">
     <img src="https://img.shields.io/badge/🔴_LIVE-Creditcoin_CC3-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live on CC3" />
   </a>
   <a href="https://vouch-registry.vercel.app">
     <img src="https://img.shields.io/badge/▶_DEMO-vouch--registry-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live demo" />
   </a>
-  <img src="https://img.shields.io/badge/102_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="95 tests" />
+  <img src="https://img.shields.io/badge/104_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="95 tests" />
   <img src="https://img.shields.io/badge/Solidity-0.8.28-363636?style=for-the-badge&logo=solidity" alt="Solidity" />
 </p>
 
@@ -110,12 +110,12 @@ case, permanently.
 
 | Contract | Address | Explorer |
 |---|---|---|
-| **VouchRegistry** | `0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329) |
-| **VouchPassport** | `0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a) |
-| **VouchCredit** | `0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622) |
-| **VouchReceivablesFacility** | `0x33652813fe9fb069b41b3de674405608ea915553` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0x33652813fe9fb069b41b3de674405608ea915553) |
-| **VouchFeeTier** | `0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8) |
-| **VouchAccess** | `0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be) |
+| **VouchRegistry** | `0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46) |
+| **VouchPassport** | `0xd9ac99ece77b6bd8c51c00ff4c42af9c212bf3a6` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xd9ac99ece77b6bd8c51c00ff4c42af9c212bf3a6) |
+| **VouchCredit** | `0x52f0dec9cfa99cd634b3ba87fc3ed5d3c4a96720` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0x52f0dec9cfa99cd634b3ba87fc3ed5d3c4a96720) |
+| **VouchReceivablesFacility** | `0xc9c872b244e6385f934fc0746b19afbdf99be5f4` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xc9c872b244e6385f934fc0746b19afbdf99be5f4) |
+| **VouchFeeTier** | `0xec66d8e1330dfe2185d2dbf08e642c850bfe4202` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xec66d8e1330dfe2185d2dbf08e642c850bfe4202) |
+| **VouchAccess** | `0xbc531d6c329fe6f8fabeb72ae0921b38bc0c1719` | [✅ View](https://creditcoin-testnet.blockscout.com/address/0xbc531d6c329fe6f8fabeb72ae0921b38bc0c1719) |
 
 ### The forgery harness
 
@@ -161,7 +161,7 @@ interface IVouchRegistry {
 
 contract MyLendingMarket {
     IVouchRegistry constant VOUCH =
-        IVouchRegistry(0xb6E0497dfD8FDbfFB25F6AE3DC8104c46bBE8329);
+        IVouchRegistry(0xc5C70bC6cB61AD5c2370c69C8410d3d988e82d46);
 
     bytes32 constant AAVE_REPAYMENT = keccak256("AAVE_REPAYMENT");
 
@@ -176,9 +176,9 @@ contract MyLendingMarket {
 ### Read it from the command line
 
 ```bash
-cast call 0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329 \
+cast call 0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46 \
   "hasProof(address,bytes32)(bool)" \
-  0x83900c0eda960a31899d51aae9b9c180a7e21711 \
+  0x4c8ea5e41ed3dbe14a4cf0b79accb5e5d3ab88f9 \
   $(cast keccak "AAVE_REPAYMENT") \
   --rpc-url https://rpc.cc3-testnet.creditcoin.network
 ```
@@ -189,8 +189,8 @@ cast call 0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329 \
 import { createVouchClient, AAVE_REPAYMENT } from '@vouch/sdk';
 
 const vouch = createVouchClient({
-  registry: '0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329',
-  passport: '0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a',
+  registry: '0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46',
+  passport: '0xd9ac99ece77b6bd8c51c00ff4c42af9c212bf3a6',
   publicClient,
 });
 
@@ -257,10 +257,16 @@ else settled this debt*.
 | Semantic drift (`useATokens` not decoded) | ⚠️ **Open** — the flag is in the log data and is not branched on |
 | Economic **value** of a proven fact | ⚠️ **Open by design** — needs a price oracle. `proofValue` is a token amount, not a valuation. |
 
-> ⚠️ **S4 and S5 are implemented and tested but not yet on the deployed
-> registry.** They change the `RegisteredSource` struct, so adopting them means a
-> new registry address — a deliberate step, not something to slip into a
-> hackathon week. The contracts at the addresses above still carry S1/S2/S3 only.
+> ✅ **Deployed and live.** The registry above carries S1–S5. `AAVE_REPAYMENT` is
+> registered with its reserve asset pinned to Sepolia USDC, and with
+> `requireDistinctPayer` **off** — the real repayment this registry holds has
+> `payer == subject`, which is what an ordinary borrower settling their own loan
+> looks like. Turning it on would reject the honest case along with the wash
+> cycle. Two live tests assert both facts against the deployed contract.
+
+> The v1 registry (`0xb6e0497d…bbe8329`) is still on chain and its facts are
+> still true. It simply cannot enforce S4 or S5, and no fact migrates between
+> registries — a proof records where it was verified.
 
 ---
 
@@ -284,7 +290,7 @@ else settled this debt*.
                                      ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                            VOUCH REGISTRY                                │
-│                 0xb6e0497d...bbe8329  ·  Creditcoin CC3                 │
+│                 0xc5c70bc6...988e82d46  ·  Creditcoin CC3                 │
 │                                                                          │
 │   ┌──────────────┐ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐  │
 │   │  chainKey    │ │  S1: status  │ │ S2: emitter  │ │  S3: replay  │  │
@@ -322,11 +328,11 @@ so the demo proves a repayment we had no hand in.
 
 | | |
 |---|---|
-| Source transaction | [`0x55e617f1...a493941e`](https://sepolia.etherscan.io/tx/0x55e617f1a86b8f2d73a7f2519c80052449488b3e74945a318ba6cc8da493941e) on Sepolia |
-| Subject | `0x83900c0eda960a31899d51aae9b9c180a7e21711` |
-| Verification | [`0x979e3dbe...ebf5c0f8`](https://creditcoin-testnet.blockscout.com/tx/0x979e3dbe9002522ce08d7e481feb274b1f97c4a4b46d080963936cebebf5c0f8) on CC3 |
-| Continuity proof | 89 roots |
-| Gas | 565,420 |
+| Source transaction | [`0x29e6cd2b...c72d9e86`](https://sepolia.etherscan.io/tx/0x29e6cd2ba2e121e4ffd227ee5305478986889d9f1e6a84a15ac5d4abc72d9e86) on Sepolia |
+| Subject | `0x4c8ea5e41ed3dbe14a4cf0b79accb5e5d3ab88f9` |
+| Verification | [`0x12b077b1...04db679a`](https://creditcoin-testnet.blockscout.com/tx/0x12b077b18fa983224916e703a657f97b8bfa43dd86d410a10523dbe204db679a) on CC3 |
+| Reserve asset | USDC, **pinned** — S4 enforced on this very proof |
+| Gas | 524,014 |
 
 Five unrelated consumers then read that one fact:
 
@@ -344,7 +350,7 @@ Five unrelated consumers then read that one fact:
 
 ```bash
 # The full suite
-forge test                                    # 102 passing, 0 failed
+forge test                                    # 104 passing, 0 failed
 
 # The forgery, against a mocked precompile
 forge test --match-contract ForgeryTest       # 11 tests
@@ -366,7 +372,7 @@ forge test --match-contract LiveTest \
 | `Registry.t.sol` | 17 | Storage, monotonicity, bounds |
 | `Consumers.t.sol` | 12 | Consumers are mutually ignorant |
 | `Forgery.t.sol` | 11 | Identical bytes, opposite outcomes |
-| **`Live.t.sol`** | **8** | **The deployed contracts, forked, no mock** |
+| **`Live.t.sol`** | **10** | **The deployed contracts, forked, no mock** |
 | `Gas.t.sol` | 5 | 1,202 gas flat, 0 precompile calls |
 
 > `Live.t.sol` fails if a documented address, a registered source, or the proven
@@ -472,7 +478,7 @@ registry bug harms every consumer, not one app.**
 |---|---|
 | **Live interface** | [vouch-registry.vercel.app](https://vouch-registry.vercel.app) |
 | **Live demo** | [/create](https://vouch-registry.vercel.app/create) |
-| **Registry contract** | [Blockscout](https://creditcoin-testnet.blockscout.com/address/0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329) |
+| **Registry contract** | [Blockscout](https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46) |
 | **The forged event** | [Etherscan](https://sepolia.etherscan.io/tx/0x6585e3652a5a5cb8808182be76280771069203f75b90e9777116c5eaad316cf3) |
 | **Attestcoin docs** | [docs.attestcoin.org](https://docs.attestcoin.org) |
 
@@ -515,8 +521,7 @@ because it would then prove the wrong log.
 - [x] 8 tests against the deployed contracts on a forked chain
 - [x] Interface deployed, live demo runs from the visitor's wallet
 - [ ] Demo video
-- [x] Reserve-asset pinning and wash-repayment guard (S4/S5) — implemented, 7 tests
-- [ ] Redeploy the registry carrying S4/S5
+- [x] Reserve-asset pinning and wash-repayment guard (S4/S5) — **deployed**, 9 tests
 - [ ] Value oracle, so `proofValue` means something
 - [ ] Mainnet deployment
 

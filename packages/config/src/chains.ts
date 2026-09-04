@@ -190,12 +190,16 @@ export interface DeployedAddresses {
  */
 export const DEPLOYED: Record<CreditcoinNetwork, DeployedAddresses> = {
   'cc3-testnet': {
-    registry: '0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329',
-    passport: '0xbfb2e062cc9098a68c60cb00d9f0731aab7cb20a',
-    credit: '0x68e495fd8d43ff1aa443eb0689f4f2f5cccb3622',
-    feeTier: '0xf1ed0bc7a5f9dd5aa98cf5b63a2a51ecf70f3bd8',
-    access: '0x46ecf42ff86e564fe4ffa086451a6f9dbd8f64be',
-    receivables: '0x33652813fe9fb069b41b3de674405608ea915553',
+    // v2 -- carries S4 (reserve asset pinned) and S5 (distinct payer,
+    // available per source). The v1 set below it stays reachable because its
+    // facts are still on chain and still true; it simply cannot enforce the two
+    // economic checks, and nothing migrates a fact from one registry to another.
+    registry: '0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46',
+    passport: '0xd9ac99ece77b6bd8c51c00ff4c42af9c212bf3a6',
+    credit: '0x52f0dec9cfa99cd634b3ba87fc3ed5d3c4a96720',
+    feeTier: '0xec66d8e1330dfe2185d2dbf08e642c850bfe4202',
+    access: '0xbc531d6c329fe6f8fabeb72ae0921b38bc0c1719',
+    receivables: '0xc9c872b244e6385f934fc0746b19afbdf99be5f4',
   },
   'cc3-mainnet': {
     registry: null,

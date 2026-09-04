@@ -149,7 +149,7 @@ export function ConsumerReads({ subject }: { subject?: string | null }) {
  * offered as a starting point because an empty dashboard demonstrates nothing,
  * and inventing data to fill it would demonstrate less than nothing.
  */
-export const PROVEN_DEMO_ADDRESS = "0x83900c0EDA960A31899d51aae9B9C180A7e21711";
+export const PROVEN_DEMO_ADDRESS = "0x4c8EA5e41ed3dBe14a4cf0B79ACcb5e5D3Ab88F9";
 
 export function ProvenAddressHint({ onUse }: { onUse: (address: string) => void }) {
   return (

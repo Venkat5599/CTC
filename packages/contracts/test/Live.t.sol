@@ -46,15 +46,15 @@ import {NativeQueryVerifierLib} from "../src/interfaces/INativeQueryVerifier.sol
 ///      unrelated to their change, and CI runs the fork explicitly.
 contract LiveTest is Test {
     // Published in the README. Read, never deployed.
-    address internal constant REGISTRY = 0xB6E0497dfD8FDbfFB25F6AE3DC8104c46bBE8329;
-    address internal constant PASSPORT = 0xBFB2E062cc9098A68c60cB00D9F0731aaB7cB20A;
-    address internal constant CREDIT = 0x68e495fd8d43ff1Aa443EB0689F4F2F5CCcB3622;
-    address internal constant FEE_TIER = 0xF1Ed0bc7a5f9DD5aa98CF5B63a2a51ECf70F3bD8;
-    address internal constant ACCESS = 0x46ECF42Ff86E564FE4FFA086451a6f9DBD8f64be;
-    address internal constant RECEIVABLES = 0x33652813fe9fb069b41b3DE674405608ea915553;
+    address internal constant REGISTRY = 0xc5c70bc6Cb61Ad5c2370c69C8410d3D988e82d46;
+    address internal constant PASSPORT = 0xD9ac99ecE77b6bd8C51C00fF4C42aF9C212Bf3a6;
+    address internal constant CREDIT = 0x52F0dec9CFA99cD634B3Ba87fc3ED5d3c4a96720;
+    address internal constant FEE_TIER = 0xEC66D8E1330Dfe2185d2dbf08e642c850bfE4202;
+    address internal constant ACCESS = 0xBC531d6C329fE6F8fabeB72Ae0921B38BC0c1719;
+    address internal constant RECEIVABLES = 0xc9C872B244e6385F934FC0746B19afBDF99Be5f4;
 
     /// The subject of the one real Aave repayment proven end to end.
-    address internal constant PROVEN = 0x83900c0EDA960A31899d51aae9B9C180A7e21711;
+    address internal constant PROVEN = 0x4c8ea5e41eD3DBE14a4cf0b79ACcb5E5d3AB88F9;
 
     /// Baselines, so a moved value is a comparison rather than an assertion.
     uint16 internal constant BASELINE_COLLATERAL_BPS = 15_000;
@@ -230,6 +230,28 @@ contract LiveTest is Test {
         assertTrue(repay.chainKey < 1000, "chainKey is a key-space value, not an EVM chainId");
     }
 
+    /// @notice The deployed repayment source pins its reserve asset (S4).
+    /// @dev Only assertable against v2. A registry without this pin accepts a
+    ///      repayment denominated in any token, which is what makes
+    ///      permissionless-market self-dealing work: the pool is real, the event
+    ///      is real, and the asset is worthless.
+    function test_live_reserveAssetIsPinned() public onlyForked {
+        DeployedSource memory repay = _sourceOf(FactTypes.AAVE_REPAYMENT);
+
+        assertTrue(repay.reserveAsset != address(0), "the repayment source pins an asset");
+        assertEq(repay.assetTopicIndex, 1, "Aave Repay carries the reserve in topic 1");
+    }
+
+    /// @notice Distinct-payer is OFF for the repayment source, deliberately.
+    /// @dev Not an oversight. The real Sepolia repayment this registry holds has
+    ///      payer == subject, which is what an ordinary borrower settling their
+    ///      own loan looks like. Turning S5 on here would reject the honest case
+    ///      along with the wash cycle, so it stays a per-source choice.
+    function test_live_distinctPayerIsOffForRepayment() public onlyForked {
+        DeployedSource memory repay = _sourceOf(FactTypes.AAVE_REPAYMENT);
+        assertFalse(repay.requireDistinctPayer, "self-repayment is the ordinary case, and still counts");
+    }
+
     // =====================================================================
 
     /// The source as the DEPLOYED registry returns it.
@@ -247,6 +269,10 @@ contract LiveTest is Test {
         bytes32 factType;
         uint8 subjectTopicIndex;
         bool enabled;
+        address reserveAsset;
+        uint8 assetTopicIndex;
+        uint8 payerTopicIndex;
+        bool requireDistinctPayer;
     }
 
     function _sourceOf(bytes32 factType) internal view returns (DeployedSource memory src) {
