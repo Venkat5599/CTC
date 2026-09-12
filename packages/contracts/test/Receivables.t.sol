@@ -40,7 +40,7 @@ contract ReceivablesTest is VouchTestBase {
     function setUp() public override {
         super.setUp();
         passport = new VouchPassport(address(registry));
-        facility = new VouchReceivablesFacility(address(registry), address(passport));
+        facility = new VouchReceivablesFacility(address(registry), address(passport), address(0));
         credit = new VouchCredit(address(registry), address(passport));
         dueDate = uint64(block.timestamp + 60 days);
     }

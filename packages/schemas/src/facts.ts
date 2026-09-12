@@ -27,7 +27,7 @@ export interface FactDefinition {
   /** What a consumer may legitimately conclude from this fact. */
   readonly meaning: string;
   /** Broad domain, so the registry reads as domain-agnostic rather than credit-only. */
-  readonly domain: 'credit' | 'liquidity' | 'governance';
+  readonly domain: 'credit' | 'liquidity' | 'governance' | 'compliance';
   /** Full Solidity event signature the topic0 is derived from. */
   readonly eventSignature: string;
   /** keccak of eventSignature. */
@@ -121,11 +121,46 @@ export const GOVERNANCE_ACTIVITY: FactDefinition = {
   valueDecimals: 0,
 };
 
+/**
+ * ERC-3643 IdentityRegistered. Compliance.
+ *
+ *   event IdentityRegistered(address indexed investorAddress, IIdentity indexed identity)
+ *
+ * Defined but NOT registered, and the gap is the point.
+ *
+ * Cross-chain KYC is usually proposed as its own protocol. Here it is a
+ * FactDefinition and a registerSource call -- no contract in this repo changes
+ * to carry it, which is asserted in ComplianceTest rather than claimed.
+ *
+ * What holds it out of REGISTERED_FACTS is not the code, it is the address.
+ * ERC-3643 identity registries are deployed per issuer, so unlike Aave there is
+ * no single canonical emitter to pin, and pinning the wrong one is the silent
+ * failure this whole file exists to prevent. Registering it is a decision about
+ * WHICH issuer a deployment trusts, made per deployment.
+ *
+ * The emitter pin matters more here than anywhere else in this file. An
+ * identity registry decides who may hold a permissioned asset at all, so a
+ * lookalike contract emitting this event is self-issued accreditation carrying
+ * a completely valid inclusion proof.
+ */
+export const KYC_VERIFIED: FactDefinition = {
+  id: factId('KYC_VERIFIED'),
+  name: 'KYC_VERIFIED',
+  label: 'Investor accreditation',
+  meaning: 'An ERC-3643 identity registry admitted this address as a verified investor.',
+  domain: 'compliance',
+  eventSignature: 'IdentityRegistered(address,address)',
+  topic0: topic('IdentityRegistered(address,address)'),
+  subjectTopicIndex: 1,
+  valueMeaning: 'None. Admission is a fact, not an amount.',
+  valueDecimals: 0,
+};
+
 /** The fact types configured on chain in v1. */
 export const REGISTERED_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP, GOVERNANCE_ACTIVITY] as const;
 
 /** Everything defined, including what is not yet safe to register. */
-export const ALL_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP, GOVERNANCE_ACTIVITY] as const;
+export const ALL_FACTS = [AAVE_REPAYMENT, LONG_TERM_LP, GOVERNANCE_ACTIVITY, KYC_VERIFIED] as const;
 
 export type RegisteredFactName = (typeof REGISTERED_FACTS)[number]['name'];
 
@@ -140,9 +175,10 @@ export function factByName(name: string): FactDefinition | undefined {
 /**
  * Whether a fact type is safe to register on chain.
  *
- * The check is not decorative. `GOVERNANCE_ACTIVITY` looks complete and would
- * register without complaint, so the guard is what stops a well-meaning script
- * from configuring a source that silently attributes votes to the wrong address.
+ * The check is not decorative. `KYC_VERIFIED` looks complete and would register
+ * without complaint, so the guard is what stops a well-meaning script from
+ * pinning an identity registry nobody verified -- which would let whoever
+ * deployed that contract mint accreditation to themselves.
  */
 export function isRegisterable(fact: FactDefinition): boolean {
   return REGISTERED_FACTS.some((registered) => registered.id === fact.id);

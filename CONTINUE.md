@@ -1,6 +1,20 @@
 # CONTINUE — session handoff
 
-**Read this first in a new session.** Written 2026-09-01. Deadline **2026-09-13 23:59 ET** (12 days).
+> **⚠️ HISTORICAL SNAPSHOT — written 2026-09-01, superseded by the README.**
+>
+> This file is a point-in-time handoff, kept for the reasoning trail rather than
+> as a source of truth. The deployed addresses below are the **v1** registry.
+> A **v2** registry carrying the S4 and S5 economic pins was deployed on
+> 2026-09-05 and is the one the demo, the SDK and `packages/config` now point at:
+>
+> | | Address |
+> |---|---|
+> | **VouchRegistry (v2 — canonical)** | `0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46` |
+> | VouchRegistry (v1 — still on chain, facts still readable) | `0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329` |
+>
+> **For current addresses and status, read `README.md`.**
+
+**Written 2026-09-01.** Deadline **2026-09-13 23:59 ET**.
 
 ---
 

@@ -15,3 +15,10 @@ coverage/
 # Local agent/skill tooling — not part of the project
 .agents/
 .claude/
+
+# Design-tool exports (Stitch). Scratch reference for the UI work, not sources.
+# The built interface lives in apps/web; these are the mockups it came from.
+code.html
+screen.png
+DESIGN.md
+stitch_*/

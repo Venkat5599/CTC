@@ -17,6 +17,25 @@ library FactTypes {
 
     /// @dev Governance. Governor VoteCast.
     bytes32 internal constant GOVERNANCE_ACTIVITY = keccak256("GOVERNANCE_ACTIVITY");
+
+    /// @dev Compliance. ERC-3643 `IdentityRegistered`, the moment an identity
+    ///      registry admits an investor to a permissioned security token.
+    ///
+    ///      This constant is here to make a structural point rather than to
+    ///      widen a product. Cross-chain compliance is usually pitched as its
+    ///      own protocol: a KYC bridge, an attestation network, a second
+    ///      registry to maintain. In a registry that pins the emitter, it is a
+    ///      `registerSource` call and a `bytes32`. NOT ONE LINE of VouchRegistry
+    ///      changes to carry it, which is the difference between infrastructure
+    ///      and an application with a compliance feature.
+    ///
+    ///      And the emitter pin is exactly what a compliance fact needs most.
+    ///      An identity registry is a permissioning contract; anyone can deploy
+    ///      one emitting a byte-identical `IdentityRegistered` and admit
+    ///      themselves. That forged accreditation carries a VALID inclusion
+    ///      proof. S2 is the only thing standing between it and a credited
+    ///      investor -- see `ComplianceTest`.
+    bytes32 internal constant KYC_VERIFIED = keccak256("KYC_VERIFIED");
 }
 
 /// @title EventSignatures
@@ -40,4 +59,14 @@ library EventSignatures {
     ///      Governor, so a Governor whose voter is indexed must be chosen, or
     ///      the subject must be decoded from data. Verify before registering.
     bytes32 internal constant VOTE_CAST = keccak256("VoteCast(address,uint256,uint8,uint256,string)");
+
+    /// @dev keccak256("IdentityRegistered(address,address)")
+    ///      ERC-3643 (T-REX) IdentityRegistry. topics: [sig, investorAddress, identity]
+    ///      subjectTopicIndex = 1 (investorAddress)
+    ///
+    ///      ERC-3643 is the deployed standard for permissioned security tokens,
+    ///      which is why the compliance fact is anchored to it rather than to a
+    ///      KYC registry written for this repo. A source we authored ourselves
+    ///      would prove only that our own contract fired.
+    bytes32 internal constant IDENTITY_REGISTERED = keccak256("IdentityRegistered(address,address)");
 }

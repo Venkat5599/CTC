@@ -50,6 +50,13 @@ contract DeployReceivables is Script {
         if (registry.code.length == 0) revert RegistryHasNoCode(registry);
         if (passport.code.length == 0) revert PassportHasNoCode(passport);
 
+        // The settlement rail. Unset deploys a bookkeeping facility, which is a
+        // legitimate configuration rather than a mistake -- see the contract's
+        // docblock -- so this one is allowed to default. It is logged either
+        // way, because "did this deployment move money" is the first question
+        // anyone reading the address will have.
+        address asset = vm.envOr("VOUCH_FACILITY_ASSET", address(0));
+
         uint256 deployerKey = vm.envOr("CREDITCOIN_PRIVATE_KEY", uint256(0));
 
         if (deployerKey == 0) {
@@ -58,13 +65,15 @@ contract DeployReceivables is Script {
             vm.startBroadcast(deployerKey);
         }
 
-        VouchReceivablesFacility facility = new VouchReceivablesFacility(registry, passport);
+        VouchReceivablesFacility facility = new VouchReceivablesFacility(registry, passport, asset);
 
         vm.stopBroadcast();
 
         console2.log("VouchRegistry (existing)  ", registry);
         console2.log("VouchPassport (existing)  ", passport);
         console2.log("VouchReceivablesFacility  ", address(facility));
+        console2.log("Settlement asset          ", asset);
+        console2.log("Funded rail               ", facility.fundedRail());
         console2.log("");
         console2.log("Advance rates, unproven -> gold:");
         console2.log("  ADVANCE_UNPROVEN_BPS    ", facility.ADVANCE_UNPROVEN_BPS());

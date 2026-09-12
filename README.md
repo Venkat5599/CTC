@@ -15,7 +15,7 @@
   <a href="https://vouch-registry.vercel.app">
     <img src="https://img.shields.io/badge/▶_DEMO-vouch--registry-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live demo" />
   </a>
-  <img src="https://img.shields.io/badge/104_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="95 tests" />
+  <img src="https://img.shields.io/badge/128_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="128 tests" />
   <img src="https://img.shields.io/badge/Solidity-0.8.28-363636?style=for-the-badge&logo=solidity" alt="Solidity" />
 </p>
 
@@ -341,8 +341,100 @@ Five unrelated consumers then read that one fact:
 | `VouchPassport` | repayment count | Tier 0 | **Tier 1** |
 | `VouchCredit` | repayment history | 150% collateral | **130% collateral** |
 | `VouchReceivablesFacility` | repayment history | 70% advance | **80% advance** |
+| ↳ *with a settlement rail wired* | *the same call* | *70,000 dUSD paid* | ***80,000 dUSD paid*** |
 | `VouchAccess` | any registered fact | closed | **open, permanently** |
 | `VouchFeeTier` | **supply** history | 0.30% | **0.30% — unchanged** |
+
+---
+
+## 💸 The advance rate, in tokens that actually move
+
+A quote is a number in an event. `VouchReceivablesFacility` now takes a
+settlement asset, so the underwriting decision is a balance rather than a claim.
+
+```solidity
+// The rail is optional and stated at deploy time, never defaulted.
+new VouchReceivablesFacility(registry, passport, address(dUSD));  // funded
+new VouchReceivablesFacility(registry, passport, address(0));     // bookkeeping
+```
+
+Two suppliers, one 100,000 invoice each, alike in every respect but one proven
+Aave repayment on another chain:
+
+| | Advance rate | Paid out |
+|---|---|---|
+| Unproven supplier | 70% | 70,000 dUSD |
+| One proven repayment | 80% | **80,000 dUSD** |
+| **The proof is worth** | | **10,000 dUSD** |
+
+`test_theProofIsWorthTenThousandTokens` asserts exactly that difference against
+`balanceOf`, not against an event.
+
+Both modes run the identical underwriting call, which is the point of making the
+rail optional: the advance rate comes from a proven cross-chain fact, and the
+plumbing that carries the cash is the financier's business. A completed cycle
+returns the pool ahead by the retained 30% — the compensation for financing an
+obligation nobody can liquidate, and what proven standing spends down.
+
+`settle` stays permissionless on a funded facility, and that is only safe
+because it is not free: the caller transfers face value in. Anyone may observe
+that a debtor paid, provided they are the one paying.
+
+> **`DemoUSD` is not part of the protocol.** The registry does not know it
+> exists and no fact is denominated in it. Minting is open, deliberately: a
+> permissionlessly-mintable token cannot be mistaken for something of value, and
+> funding the pool buys no claim on anything. It is working capital donated to a
+> demonstration, not a market.
+
+---
+
+## 🪪 Compliance is a registry entry, not a protocol
+
+Cross-chain KYC is usually pitched as its own system — an attestation network, a
+compliance bridge, a second registry per chain. In a registry that already pins
+the emitter, it is one call:
+
+```solidity
+registry.registerSource(
+    FactTypes.KYC_VERIFIED,                 // keccak256("KYC_VERIFIED")
+    CHAIN_ETHEREUM,
+    IDENTITY_REGISTRY,                      // ERC-3643 IdentityRegistry
+    EventSignatures.IDENTITY_REGISTERED,    // IdentityRegistered(address,address)
+    1                                       // investorAddress sits at topic 1
+);
+
+VouchAccess complianceGate = new VouchAccess(registry, FactTypes.KYC_VERIFIED, 1);
+```
+
+**Not one line of `VouchRegistry` changes.** `Compliance.t.sol` asserts that
+rather than claiming it: it registers the source on the registry the fixture
+already built, proves an accreditation through it, and opens a gate — a test
+that could not compile if a new domain needed a new code path. The registry now
+carries four unrelated domains through one path: credit, liquidity, governance,
+compliance.
+
+**And this is where emitter pinning earns the most.** An identity registry
+decides who may hold a permissioned asset at all. Anyone can deploy a contract
+emitting a byte-identical `IdentityRegistered` naming themselves — self-issued
+accreditation, carrying a **completely valid** inclusion proof.
+
+| Test | Asserts |
+|---|---|
+| `test_theForgedAccreditationCarriesAValidProof` | the prover accepts it — nothing is broken |
+| `test_selfIssuedAccreditationIsRejected` | the registry reverts `EmitterMismatch` |
+| `test_theForgeryDiffersFromTheGenuineArticleInExactlyOneField` | same type, chain, log index — only the emitter decides |
+
+**`KYC_VERIFIED` is defined but not registered on chain, and the gap is honest.**
+What holds it back is not the code, it is the address: ERC-3643 identity
+registries are deployed per issuer, so unlike Aave there is no canonical emitter
+to pin. Registering it is a decision about *which issuer a deployment trusts* —
+made per deployment, against a contract someone verified. Pinning one from
+memory is the exact silent failure this repo exists to argue against.
+
+**Known limit, stated in code.** Vouch can prove an investor *was* admitted. It
+can never prove they were not later removed, because absence of an event is not
+enumerable. A consumer needing live revocation reads the identity registry on
+its own chain; what crosses chains is the admission, not the current status.
 
 ---
 
@@ -350,7 +442,7 @@ Five unrelated consumers then read that one fact:
 
 ```bash
 # The full suite
-forge test                                    # 104 passing, 0 failed
+forge test                                    # 128 passing, 0 failed
 
 # The forgery, against a mocked precompile
 forge test --match-contract ForgeryTest       # 11 tests
@@ -369,10 +461,12 @@ forge test --match-contract LiveTest \
 |---|---|---|
 | `Security.t.sol` | 30 | Each attack is rejected, S1–S5 |
 | `Receivables.t.sol` | 19 | The RWA consumer's terms |
+| **`FundedFacility.t.sol`** | **16** | **The same terms, measured in tokens that move** |
 | `Registry.t.sol` | 17 | Storage, monotonicity, bounds |
 | `Consumers.t.sol` | 12 | Consumers are mutually ignorant |
 | `Forgery.t.sol` | 11 | Identical bytes, opposite outcomes |
 | **`Live.t.sol`** | **10** | **The deployed contracts, forked, no mock** |
+| `Compliance.t.sol` | 8 | A fourth domain, added with no code change |
 | `Gas.t.sol` | 5 | 1,202 gas flat, 0 precompile calls |
 
 > `Live.t.sol` fails if a documented address, a registered source, or the proven
@@ -436,8 +530,9 @@ CTC/
 │   │   ├── src/verification/  #   AttestcoinVerifier, SourceValidator
 │   │   ├── src/security/      #   ReplayGuard, SourceRegistry
 │   │   ├── src/consumers/     #   Credit, FeeTier, Access, Receivables
+│   │   ├── src/demo/          #   DemoUSD, the settlement rail (not protocol)
 │   │   ├── src/attack/        #   SpoofEmitter, NaiveConsumer
-│   │   └── test/              #   95 tests, incl. Live.t.sol against CC3
+│   │   └── test/              #   128 tests, incl. Live.t.sol against CC3
 │   ├── sdk/                   # TypeScript client
 │   ├── config/                # chainKey ≠ chainId, enforced by branded types
 │   ├── schemas/               # Fact definitions
@@ -522,6 +617,8 @@ because it would then prove the wrong log.
 - [x] Interface deployed, live demo runs from the visitor's wallet
 - [ ] Demo video
 - [x] Reserve-asset pinning and wash-repayment guard (S4/S5) — **deployed**, 9 tests
+- [x] Receivables facility settles in real tokens — 16 tests measuring `balanceOf`
+- [x] Compliance as a fourth domain, added with **zero** registry changes — 8 tests
 - [ ] Value oracle, so `proofValue` means something
 - [ ] Mainnet deployment
 

@@ -13,6 +13,7 @@ import type { Hex } from './types';
 export {
   AAVE_REPAYMENT,
   GOVERNANCE_ACTIVITY,
+  KYC_VERIFIED,
   LONG_TERM_LP,
   REGISTERED_FACTS,
   ALL_FACTS,
