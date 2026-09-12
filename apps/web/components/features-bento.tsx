@@ -1,25 +1,42 @@
 "use client";
 
 import { motion, type Transition } from "motion/react";
-import { CircleCheck, Star } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import type { ReactNode } from "react";
 
 const EASE = [0.23, 1, 0.32, 1] as const;
 
 /**
- * Source chains, not people.
+ * The five checks, not a logo wall.
  *
- * The template stacked four stock headshots here, which reads as a user base.
- * Vouch does not have one yet, and implying otherwise on a protocol whose
- * argument is "stop taking claims on trust" is the one mistake that would cost
- * the reader's belief in every measured number further down the page.
+ * This slot has now been wrong twice. The template stacked four stock headshots
+ * here, which reads as a user base Vouch does not have. Replacing them with
+ * four chain logos was no better: it read as four supported source chains, and
+ * Attestcoin on CC3 Testnet exposes exactly two -- Sepolia (chainKey 1) and
+ * Ethereum mainnet (chainKey 3). Polygon, Arbitrum and Optimism were not
+ * sources; they were decoration that made a claim.
+ *
+ * What actually stands behind the test count is the five consumer-layer checks,
+ * so that is what goes here. Each one is a real gate in SourceValidator with its
+ * own test, and a reader who doubts any of it can run `forge test` and count.
  */
-const SOURCE_CHAINS = [
-  ["ethereum", "Ethereum"],
-  ["polygon", "Polygon"],
-  ["arbitrum", "Arbitrum"],
-  ["optimism", "Optimism"],
+const VERIFICATION_GATES = [
+  ["S1", "Receipt status"],
+  ["S2", "Emitter pinned"],
+  ["S3", "Replay guard"],
+  ["S4", "Reserve asset"],
+  ["S5", "Distinct payer"],
 ] as const;
+
+/**
+ * Single source of truth for the suite size, so the number on the page and the
+ * number `forge test` prints cannot drift apart again. They already did once:
+ * three components hard-coded 142 while the suite returned 128. On a protocol
+ * whose entire argument is that an unverified claim is worthless, shipping an
+ * unverifiable one about ourselves is the cheapest possible way to lose the
+ * reader. Update this constant when the suite grows, and nowhere else.
+ */
+const TEST_COUNT = 128;
 
 /**
  * Measured, not invented. Both figures come from Gas.t.sol, and the second is
@@ -73,29 +90,22 @@ function PhoneMockup({
   );
 }
 
-function AvatarStack(): ReactNode {
+/**
+ * Bare marks on the surface. No circles, no tiles, no borders -- a glyph inside
+ * a filled container is the component-kit default, and five of them in a row
+ * reads as a widget rather than a list of things this contract actually checks.
+ * Rank comes from type: the gate number in accent, its subject in muted body.
+ */
+function VerificationGates(): ReactNode {
   return (
-    <div className="flex items-center">
-      {SOURCE_CHAINS.map(([slug, name]) => (
-        <div
-          key={slug}
-          className="size-12 rounded-full border-2 border-white/25 bg-black/40 overflow-hidden -ml-4 first:ml-0 flex items-center justify-center"
-          title={name}
-        >
-          <img
-            src={`https://cdn.simpleicons.org/${slug}/ffffff`}
-            alt={name}
-            width={22}
-            height={22}
-            className="size-[22px] opacity-90"
-            loading="lazy"
-          />
-        </div>
+    <ul className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1.5">
+      {VERIFICATION_GATES.map(([id, subject]) => (
+        <li key={id} className="flex items-baseline gap-1.5">
+          <span className="text-accent text-sm font-semibold tabular-nums">{id}</span>
+          <span className="text-card-foreground-muted text-xs">{subject}</span>
+        </li>
       ))}
-      <div className="size-12 rounded-full border-2 border-white/25 bg-accent text-black flex items-center justify-center text-xs font-semibold -ml-4">
-        +more
-      </div>
-    </div>
+    </ul>
   );
 }
 
@@ -194,16 +204,22 @@ function ProjectCardContent(): ReactNode {
 
       <div className="relative z-10 flex items-start justify-between gap-3 h-full">
         <div>
-          <p className="text-base font-semibold text-neutral-900">Project</p>
-          <p className="text-base font-semibold text-neutral-900">Alpha</p>
+          <p className="text-base font-semibold text-neutral-900">Aave V3</p>
+          <p className="text-base font-semibold text-neutral-900">Repayment</p>
         </div>
         <CircleCheck className="opacity-25 text-black" aria-hidden="true" />
       </div>
 
+      {/*
+        The template's "PRJ • 2024 • LIVE" placeholder named nothing. These three
+        are the fields that actually decide whether a fact is admissible: which
+        Attestcoin key space the proof came from, which network it settled on,
+        and that it is on chain now rather than staged.
+      */}
       <div className="absolute bottom-3 left-5 flex items-center gap-2 text-neutral-700 text-xs tracking-widest" aria-hidden="true">
-        <span>PRJ</span>
+        <span>KEY 1</span>
         <span>•</span>
-        <span>2024</span>
+        <span>SEPOLIA</span>
         <span>•</span>
         <span>LIVE</span>
       </div>
@@ -254,7 +270,7 @@ function DashboardCard(): ReactNode {
             <span className="text-neutral-500 text-xs">ⓘ</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-lg font-medium text-white">142 passing</span>
+            <span className="text-lg font-medium text-white tabular-nums">{TEST_COUNT} passing</span>
             <span className="text-xs font-medium text-accent bg-accent/20 px-2 py-0.5 rounded">
               ✓ 100%
             </span>
@@ -276,19 +292,27 @@ function TrustedByCard(): ReactNode {
         <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-1">
           Proven by
         </h3>
-        <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-5">
-          142 tests
+        <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-5 tabular-nums">
+          {TEST_COUNT} tests
         </h3>
       </div>
 
       <div className="transition-transform duration-500 ease-out group-hover:scale-105">
-        <AvatarStack />
+        <VerificationGates />
       </div>
 
-      <div className="flex items-center gap-2 mt-5 text-card-foreground-muted transition-transform duration-500 ease-out group-hover:scale-105">
-        <Star className="size-4 fill-current" />
-        <span className="text-xs font-medium">4.9 from 48k+ reviews</span>
-      </div>
+      {/*
+        The template closed this card with a star rating and a review count, both
+        invented. Vouch has no reviewers, and a fabricated number is the exact
+        thing the registry exists to make unnecessary -- so the footer is now the
+        command that reproduces the figure above it. A reader who doubts the
+        count can settle it in one line instead of taking our word, which is the
+        whole argument of the protocol applied to our own marketing page.
+      */}
+      <p className="mt-5 text-card-foreground-muted text-xs font-medium">
+        Check it yourself:{" "}
+        <code className="text-card-foreground">forge test</code>
+      </p>
     </motion.div>
   );
 }
@@ -305,7 +329,7 @@ function IntegrationsCard(): ReactNode {
           Permissionless
         </h3>
         <p className="text-neutral-700 text-sm">
-          Enterprise-ready infrastructure that grows with you
+          Anyone can submit a proof. No allowlist, no operator, no registration
         </p>
       </div>
 

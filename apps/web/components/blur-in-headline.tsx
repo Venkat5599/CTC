@@ -3,8 +3,16 @@
 import { useRef, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
+/**
+ * The thesis, in one sentence, because this is the only paragraph on the
+ * marketing page a visitor is guaranteed to read to the end -- the words blur
+ * in one at a time as they scroll, so they cannot skim it.
+ *
+ * It must survive the reader asking "compared to what?" at every clause, which
+ * is why it names the alternative (an operator's word) before naming us.
+ */
 const headline =
-  "Modern teams use our platform to elevate every customer touchpoint, blending human expertise with AI capabilities in a unified system that drives continuous improvement across all channels.";
+  "An operator's attestation is a claim you have to trust. Vouch proves the transaction on the chain it happened on, checks that the proof means what it claims, and writes the fact to Creditcoin once — where every lender reads it for free, forever.";
 
 export function BlurInHeadline(): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);
