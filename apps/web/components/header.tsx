@@ -14,14 +14,38 @@ import { useState, type ReactNode } from "react";
  */
 const menus = {
   products: [
-    { label: "Passport", href: "/passport", description: "Standing for any address" },
-    { label: "Proofs", href: "/proofs", description: "Every verified fact, traceable to both chains" },
-    { label: "Consumers", href: "/apps", description: "Three applications, one registry" },
-    { label: "Credit", href: "/credit", description: "Collateral priced from proven history" },
+    {
+      label: "Passport",
+      href: "/passport",
+      description: "Standing for any address",
+    },
+    {
+      label: "Proofs",
+      href: "/proofs",
+      description: "Every verified fact, traceable to both chains",
+    },
+    {
+      label: "Consumers",
+      href: "/apps",
+      description: "Three applications, one registry",
+    },
+    {
+      label: "Credit",
+      href: "/credit",
+      description: "Collateral priced from proven history",
+    },
   ],
   resources: [
-    { label: "Developers", href: "/developers", description: "Integrate in one view call" },
-    { label: "Verification", href: "/verify", description: "Watch a fact move through the pipeline" },
+    {
+      label: "Developers",
+      href: "/developers",
+      description: "Integrate in one view call",
+    },
+    {
+      label: "Verification",
+      href: "/verify",
+      description: "Watch a fact move through the pipeline",
+    },
     {
       label: "Threat model",
       href: "https://github.com/Venkat5599/CTC/blob/master/docs/security/threat-model.md",
@@ -39,14 +63,14 @@ const ease = [0.23, 1, 0.32, 1] as const;
 
 function HamburgerIcon({ isOpen }: { isOpen: boolean }): ReactNode {
   return (
-    <div className="w-8 h-4 relative flex flex-col justify-between cursor-pointer">
+    <div className="relative flex h-4 w-8 cursor-pointer flex-col justify-between">
       <motion.span
-        className="block h-0.5 w-full bg-foreground origin-center rounded-full"
+        className="bg-foreground block h-0.5 w-full origin-center rounded-full"
         animate={isOpen ? { rotate: 45, y: 4.5 } : { rotate: 0, y: 0 }}
         transition={{ duration: 0.25, ease }}
       />
       <motion.span
-        className="block h-0.5 w-full bg-foreground origin-center rounded-full"
+        className="bg-foreground block h-0.5 w-full origin-center rounded-full"
         animate={isOpen ? { rotate: -45, y: -9.5 } : { rotate: 0, y: 0 }}
         transition={{ duration: 0.25, ease }}
       />
@@ -54,28 +78,28 @@ function HamburgerIcon({ isOpen }: { isOpen: boolean }): ReactNode {
   );
 }
 
-function DesktopDropdown({ 
-  label, 
-  menuKey, 
-  isOpen, 
-  onOpen, 
-  onClose 
-}: { 
-  label: string; 
-  menuKey: keyof typeof menus; 
-  isOpen: boolean; 
-  onOpen: () => void; 
-  onClose: () => void; 
+function DesktopDropdown({
+  label,
+  menuKey,
+  isOpen,
+  onOpen,
+  onClose,
+}: {
+  label: string;
+  menuKey: keyof typeof menus;
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
 }): ReactNode {
   return (
     <div className="relative" onMouseEnter={onOpen} onMouseLeave={onClose}>
-      <button 
-        className="flex items-center gap-1 px-4 py-2 max-[1200px]:px-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-full hover:bg-foreground/5"
+      <button
+        className="text-foreground/80 hover:text-foreground hover:bg-foreground/5 flex items-center gap-1 rounded-full px-4 py-2 text-sm font-medium transition-colors max-[1200px]:px-3"
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
         {label}
-        <ChevronDown className="w-4 h-4" aria-hidden="true" />
+        <ChevronDown className="h-4 w-4" aria-hidden="true" />
       </button>
       <AnimatePresence>
         {isOpen && (
@@ -84,13 +108,21 @@ function DesktopDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.96 }}
             transition={{ duration: 0.2, ease }}
-            className="absolute top-full left-0 pt-2 w-72"
+            className="absolute top-full left-0 w-72 pt-2"
           >
-            <div className="bg-frame border border-border rounded-2xl shadow-lg overflow-hidden p-2">
+            <div className="bg-frame border-border overflow-hidden rounded-2xl border p-2 shadow-lg">
               {menus[menuKey].map((item) => (
-                <a key={item.label} href={item.href} className="block px-4 py-3 rounded-xl hover:bg-muted transition-colors">
-                  <div className="text-sm font-medium text-foreground">{item.label}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{item.description}</div>
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className="hover:bg-muted block rounded-xl px-4 py-3 transition-colors"
+                >
+                  <div className="text-foreground text-sm font-medium">
+                    {item.label}
+                  </div>
+                  <div className="text-muted-foreground mt-0.5 text-xs">
+                    {item.description}
+                  </div>
                 </a>
               ))}
             </div>
@@ -101,29 +133,35 @@ function DesktopDropdown({
   );
 }
 
-function MobileExpandable({ 
-  label, 
-  menuKey, 
-  isExpanded, 
-  onToggle, 
-  onClose 
-}: { 
-  label: string; 
-  menuKey: keyof typeof menus; 
-  isExpanded: boolean; 
-  onToggle: () => void; 
-  onClose: () => void; 
+function MobileExpandable({
+  label,
+  menuKey,
+  isExpanded,
+  onToggle,
+  onClose,
+}: {
+  label: string;
+  menuKey: keyof typeof menus;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onClose: () => void;
 }): ReactNode {
   return (
-    <div className="border-b border-foreground/10">
+    <div className="border-foreground/10 border-b">
       <button
-        className="flex items-center justify-between py-4 w-full text-base font-medium text-foreground"
+        className="text-foreground flex w-full items-center justify-between py-4 text-base font-medium"
         onClick={onToggle}
         aria-expanded={isExpanded}
       >
         {label}
-        <motion.div animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
+        <motion.div
+          animate={{ rotate: isExpanded ? 180 : 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <ChevronDown
+            className="text-muted-foreground h-5 w-5"
+            aria-hidden="true"
+          />
         </motion.div>
       </button>
       <AnimatePresence>
@@ -135,12 +173,12 @@ function MobileExpandable({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="pb-2 space-y-1">
+            <div className="space-y-1 pb-2">
               {menus[menuKey].map((item) => (
                 <a
                   key={item.label}
                   href="/passport"
-                  className="block py-2 text-sm text-foreground/80 hover:text-foreground"
+                  className="text-foreground/80 hover:text-foreground block py-2 text-sm"
                   onClick={onClose}
                 >
                   {item.label}
@@ -155,8 +193,18 @@ function MobileExpandable({
 }
 
 const CornerSVG = ({ className }: { className: string }) => (
-  <svg className={className} width="50" height="50" viewBox="0 0 50 50" fill="none" aria-hidden="true">
-    <path d="M5.50871e-06 0C-0.00788227 37.3001 8.99616 50.0116 50 50H5.50871e-06V0Z" fill="currentColor" />
+  <svg
+    className={className}
+    width="50"
+    height="50"
+    viewBox="0 0 50 50"
+    fill="none"
+    aria-hidden="true"
+  >
+    <path
+      d="M5.50871e-06 0C-0.00788227 37.3001 8.99616 50.0116 50 50H5.50871e-06V0Z"
+      fill="currentColor"
+    />
   </svg>
 );
 
@@ -166,19 +214,22 @@ export function Header(): ReactNode {
   const [mobileExpanded, setMobileExpanded] = useState<string | null>(null);
 
   const closeMobile = () => setMobileMenuOpen(false);
-  const toggleExpanded = (key: string) => setMobileExpanded(mobileExpanded === key ? null : key);
+  const toggleExpanded = (key: string) =>
+    setMobileExpanded(mobileExpanded === key ? null : key);
 
   return (
     <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.5, ease }}
-      className="fixed shadow-2xl/20 rounded-b-4xl top-2.5 left-1/2 -translate-x-1/2 w-full max-w-5xl max-[1200px]:max-w-2xl bg-frame z-9998 max-[850px]:top-0 max-[850px]:left-0 max-[850px]:right-0 max-[850px]:translate-x-0 max-[850px]:w-full max-[850px]:max-w-none max-[850px]:rounded-none max-[850px]:rounded-b-4xl max-[850px]:overflow-hidden"
+      className="bg-frame fixed top-2.5 left-1/2 z-9998 w-full max-w-5xl -translate-x-1/2 rounded-b-4xl shadow-2xl/20 max-[1200px]:max-w-2xl max-[850px]:top-0 max-[850px]:right-0 max-[850px]:left-0 max-[850px]:w-full max-[850px]:max-w-none max-[850px]:translate-x-0 max-[850px]:overflow-hidden max-[850px]:rounded-none max-[850px]:rounded-b-4xl"
     >
-      <div className="h-20 max-[850px]:h-18 flex items-center justify-between px-4 max-[850px]:px-6">
-        <a href="/" className="flex items-center gap-2 ml-4 max-[850px]:ml-0">
-          <div className="w-6 h-6 rounded-full bg-foreground" />
-          <span className="text-lg font-semibold text-foreground leading-0 max-[1200px]:hidden max-[850px]:inline">Vouch</span>
+      <div className="flex h-20 items-center justify-between px-4 max-[850px]:h-18 max-[850px]:px-6">
+        <a href="/" className="ml-4 flex items-center gap-2 max-[850px]:ml-0">
+          <div className="bg-foreground h-6 w-6 rounded-full" />
+          <span className="text-foreground text-lg leading-0 font-semibold max-[1200px]:hidden max-[850px]:inline">
+            Vouch
+          </span>
         </a>
 
         <nav className="flex items-center gap-1 max-[1200px]:gap-0 max-[850px]:hidden">
@@ -196,26 +247,37 @@ export function Header(): ReactNode {
             onOpen={() => setActiveMenu("resources")}
             onClose={() => setActiveMenu(null)}
           />
-          <a href="#pricing" className="px-4 py-2 max-[1200px]:px-3 text-sm font-medium text-foreground/80 hover:text-foreground transition-colors rounded-full hover:bg-foreground/5">
+          <a
+            href="#pricing"
+            className="text-foreground/80 hover:text-foreground hover:bg-foreground/5 rounded-full px-4 py-2 text-sm font-medium transition-colors max-[1200px]:px-3"
+          >
             Pricing
           </a>
         </nav>
 
         <div className="flex items-center gap-4 max-[850px]:hidden">
-          <a href="/developers" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
+          <a
+            href="/developers"
+            className="text-foreground/80 hover:text-foreground text-sm font-medium transition-colors"
+          >
             Sign in
           </a>
-          <a href="/passport" className="group relative inline-flex items-center">
-            <span className="absolute right-0 inset-y-0 w-[calc(100%-1.5rem)] rounded-xl bg-accent" />
-            <span className="relative z-10 px-5 py-3 rounded-xl bg-foreground text-background text-sm font-medium">Try for free</span>
-            <span className="relative -left-px z-10 w-10 h-10 rounded-xl flex items-center justify-center text-black">
-              <ArrowDownRight className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-45" />
+          <a
+            href="/passport"
+            className="group relative inline-flex items-center"
+          >
+            <span className="bg-accent absolute inset-y-0 right-0 w-[calc(100%-1.5rem)] rounded-xl" />
+            <span className="bg-foreground text-background relative z-10 rounded-xl px-5 py-3 text-sm font-medium">
+              Try for free
+            </span>
+            <span className="relative -left-px z-10 flex h-10 w-10 items-center justify-center rounded-xl text-black">
+              <ArrowDownRight className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
             </span>
           </a>
         </div>
 
         <button
-          className="hidden max-[850px]:flex items-center justify-center w-10 h-10"
+          className="hidden h-10 w-10 items-center justify-center max-[850px]:flex"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileMenuOpen}
@@ -231,11 +293,15 @@ export function Header(): ReactNode {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease }}
-            className="hidden max-[850px]:block overflow-hidden"
+            className="hidden overflow-hidden max-[850px]:block"
           >
             <div className="px-6 pb-4">
               <nav className="space-y-0">
-                <a href="/apps" className="flex items-center justify-between py-4 text-base font-medium text-foreground border-b border-foreground/10" onClick={closeMobile}>
+                <a
+                  href="/apps"
+                  className="text-foreground border-foreground/10 flex items-center justify-between border-b py-4 text-base font-medium"
+                  onClick={closeMobile}
+                >
                   Consumers
                 </a>
                 <MobileExpandable
@@ -252,20 +318,34 @@ export function Header(): ReactNode {
                   onToggle={() => toggleExpanded("resources")}
                   onClose={closeMobile}
                 />
-                <a href="#pricing" className="flex items-center justify-between py-4 text-base font-medium text-foreground" onClick={closeMobile}>
+                <a
+                  href="#pricing"
+                  className="text-foreground flex items-center justify-between py-4 text-base font-medium"
+                  onClick={closeMobile}
+                >
                   Pricing
                 </a>
               </nav>
 
               <div className="flex items-center justify-between pt-8 pb-2">
-                <a href="/developers" className="text-base font-medium text-foreground" onClick={closeMobile}>
+                <a
+                  href="/developers"
+                  className="text-foreground text-base font-medium"
+                  onClick={closeMobile}
+                >
                   Sign in
                 </a>
-                <a href="/passport" className="group relative inline-flex items-center" onClick={closeMobile}>
-                  <span className="absolute right-0 inset-y-0 w-[calc(100%-1.5rem)] rounded-2xl bg-accent" />
-                  <span className="relative z-10 px-5 py-3 rounded-2xl bg-foreground text-background text-sm font-medium">Try for free</span>
-                  <span className="relative -left-px z-10 w-10 h-10 rounded-2xl flex items-center justify-center text-foreground">
-                    <ArrowDownRight className="w-4 h-4 transition-transform duration-300 group-hover:-rotate-45" />
+                <a
+                  href="/passport"
+                  className="group relative inline-flex items-center"
+                  onClick={closeMobile}
+                >
+                  <span className="bg-accent absolute inset-y-0 right-0 w-[calc(100%-1.5rem)] rounded-2xl" />
+                  <span className="bg-foreground text-background relative z-10 rounded-2xl px-5 py-3 text-sm font-medium">
+                    Try for free
+                  </span>
+                  <span className="text-foreground relative -left-px z-10 flex h-10 w-10 items-center justify-center rounded-2xl">
+                    <ArrowDownRight className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
                   </span>
                 </a>
               </div>
@@ -274,8 +354,8 @@ export function Header(): ReactNode {
         )}
       </AnimatePresence>
 
-      <CornerSVG className="absolute top-0 -left-12.25 rotate-180 text-frame pointer-events-none max-[850px]:hidden" />
-      <CornerSVG className="absolute top-0 -right-12.25 rotate-90 text-frame pointer-events-none max-[850px]:hidden" />
+      <CornerSVG className="text-frame pointer-events-none absolute top-0 -left-12.25 rotate-180 max-[850px]:hidden" />
+      <CornerSVG className="text-frame pointer-events-none absolute top-0 -right-12.25 rotate-90 max-[850px]:hidden" />
     </motion.header>
   );
 }

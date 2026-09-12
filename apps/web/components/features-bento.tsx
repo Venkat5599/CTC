@@ -70,19 +70,14 @@ function PhoneMockup({
 
   return (
     <div
-      className={`
-        relative bg-background shadow-2xl border-neutral-800 overflow-hidden z-10
-        ${isCompact 
-          ? "w-44 md:w-48 h-64 md:h-72 rounded-3xl border-4" 
-          : "w-56 md:w-64 h-96 md:h-115 rounded-t-4xl border-6 border-b-0"
-        }
-      `}
+      className={`bg-background relative z-10 overflow-hidden border-neutral-800 shadow-2xl ${
+        isCompact
+          ? "h-64 w-44 rounded-3xl border-4 md:h-72 md:w-48"
+          : "h-96 w-56 rounded-t-4xl border-6 border-b-0 md:h-115 md:w-64"
+      } `}
     >
       <div
-        className={`
-          absolute left-1/2 -translate-x-1/2 bg-neutral-800 rounded-full z-10
-          ${isCompact ? "top-2 w-16 h-4" : "top-2 w-20 h-5"}
-        `}
+        className={`absolute left-1/2 z-10 -translate-x-1/2 rounded-full bg-neutral-800 ${isCompact ? "top-2 h-4 w-16" : "top-2 h-5 w-20"} `}
         aria-hidden="true"
       />
       {children}
@@ -101,7 +96,9 @@ function VerificationGates(): ReactNode {
     <ul className="flex flex-wrap items-baseline justify-center gap-x-4 gap-y-1.5">
       {VERIFICATION_GATES.map(([id, subject]) => (
         <li key={id} className="flex items-baseline gap-1.5">
-          <span className="text-accent text-sm font-semibold tabular-nums">{id}</span>
+          <span className="text-accent text-sm font-semibold tabular-nums">
+            {id}
+          </span>
           <span className="text-card-foreground-muted text-xs">{subject}</span>
         </li>
       ))}
@@ -119,22 +116,25 @@ function DeploymentStat({
   change: string;
 }): ReactNode {
   return (
-    <div className="flex items-center justify-between bg-background rounded-xl p-3">
+    <div className="bg-background flex items-center justify-between rounded-xl p-3">
       <div className="flex items-center gap-2">
         <span className="text-lg">{icon}</span>
         <span className="text-foreground font-medium">{label}</span>
       </div>
-      <span className="text-black text-sm font-medium">{change}</span>
+      <span className="text-sm font-medium text-black">{change}</span>
     </div>
   );
 }
 
 function DecorativeCircles(): ReactNode {
   return (
-    <div className="absolute inset-0 flex items-center justify-center" aria-hidden="true">
-      <div className="absolute size-56 border border-accent/80 rounded-full" />
-      <div className="absolute size-72 border border-accent/60 rounded-full" />
-      <div className="absolute size-88 border border-accent/40 rounded-full" />
+    <div
+      className="absolute inset-0 flex items-center justify-center"
+      aria-hidden="true"
+    >
+      <div className="border-accent/80 absolute size-56 rounded-full border" />
+      <div className="border-accent/60 absolute size-72 rounded-full border" />
+      <div className="border-accent/40 absolute size-88 rounded-full border" />
     </div>
   );
 }
@@ -144,32 +144,33 @@ function StepByStepCard(): ReactNode {
     <motion.div
       {...cardAnimation}
       transition={getCardTransition(0)}
-      className="group bg-card-primary rounded-4xl p-8 pb-0 overflow-hidden min-h-140 md:row-span-2 flex flex-col"
+      className="group bg-card-primary flex min-h-140 flex-col overflow-hidden rounded-4xl p-8 pb-0 md:row-span-2"
     >
-      <div className="relative z-10 text-center mb-6 transition-transform duration-500 ease-out group-hover:scale-105">
-        <h3 className="text-2xl md:text-4xl font-medium text-neutral-900 leading-tight mb-3">
+      <div className="relative z-10 mb-6 text-center transition-transform duration-500 ease-out group-hover:scale-105">
+        <h3 className="mb-3 text-2xl leading-tight font-medium text-neutral-900 md:text-4xl">
           One proof, read by every application
         </h3>
-        <p className="text-neutral-700 text-sm">
-          Prove an address once on any supported chain, and every Creditcoin application can read it
+        <p className="text-sm text-neutral-700">
+          Prove an address once on any supported chain, and every Creditcoin
+          application can read it
         </p>
       </div>
 
-      <div className="flex-1 flex justify-center items-end transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+      <div className="flex flex-1 items-end justify-center transition-transform duration-500 ease-out group-hover:scale-[1.02]">
         <PhoneMockup variant="full">
-          <div className="absolute inset-0 bg-phone-screen pt-14 px-5">
-            <h4 className="text-3xl font-medium text-neutral-900 leading-none tracking-tight mt-4">
+          <div className="bg-phone-screen absolute inset-0 px-5 pt-14">
+            <h4 className="mt-4 text-3xl leading-none font-medium tracking-tight text-neutral-900">
               Verify once.
             </h4>
-            <h4 className="text-3xl font-medium text-neutral-900 leading-none tracking-tight mb-4">
+            <h4 className="mb-4 text-3xl leading-none font-medium tracking-tight text-neutral-900">
               Reuse forever.
             </h4>
-            <p className="text-sm text-neutral-500 leading-snug mb-8">
+            <p className="mb-8 text-sm leading-snug text-neutral-500">
               One verification, then every application reads it for free.
             </p>
 
             {/* Project Card */}
-            <div className="relative bg-linear-to-br from-accent via-accent/80 to-accent/50 rounded-2xl p-4 h-52 shadow-xl overflow-hidden">
+            <div className="from-accent via-accent/80 to-accent/50 relative h-52 overflow-hidden rounded-2xl bg-linear-to-br p-4 shadow-xl">
               <ProjectCardContent />
             </div>
           </div>
@@ -202,12 +203,12 @@ function ProjectCardContent(): ReactNode {
         />
       </svg>
 
-      <div className="relative z-10 flex items-start justify-between gap-3 h-full">
+      <div className="relative z-10 flex h-full items-start justify-between gap-3">
         <div>
           <p className="text-base font-semibold text-neutral-900">Aave V3</p>
           <p className="text-base font-semibold text-neutral-900">Repayment</p>
         </div>
-        <CircleCheck className="opacity-25 text-black" aria-hidden="true" />
+        <CircleCheck className="text-black opacity-25" aria-hidden="true" />
       </div>
 
       {/*
@@ -216,7 +217,10 @@ function ProjectCardContent(): ReactNode {
         Attestcoin key space the proof came from, which network it settled on,
         and that it is on chain now rather than staged.
       */}
-      <div className="absolute bottom-3 left-5 flex items-center gap-2 text-neutral-700 text-xs tracking-widest" aria-hidden="true">
+      <div
+        className="absolute bottom-3 left-5 flex items-center gap-2 text-xs tracking-widest text-neutral-700"
+        aria-hidden="true"
+      >
         <span>KEY 1</span>
         <span>•</span>
         <span>SEPOLIA</span>
@@ -232,10 +236,10 @@ function DashboardCard(): ReactNode {
     <motion.div
       {...cardAnimation}
       transition={getCardTransition(0.1)}
-      className="group bg-card-secondary rounded-4xl p-8 overflow-hidden min-h-80 relative flex flex-col md:block"
+      className="group bg-card-secondary relative flex min-h-80 flex-col overflow-hidden rounded-4xl p-8 md:block"
     >
       <div className="relative z-10 max-w-48 transition-transform duration-500 ease-out group-hover:scale-105">
-        <h3 className="text-xl md:text-2xl whitespace-nowrap font-medium text-card-foreground leading-tight mb-3">
+        <h3 className="text-card-foreground mb-3 text-xl leading-tight font-medium whitespace-nowrap md:text-2xl">
           Verified facts
         </h3>
         <p className="text-card-foreground-muted text-sm">
@@ -243,35 +247,43 @@ function DashboardCard(): ReactNode {
         </p>
       </div>
 
-      <div className="relative md:absolute mt-8 md:mt-0 md:right-12 md:top-1/2 md:-translate-y-1/2 flex items-center justify-center transition-transform duration-500 ease-out group-hover:scale-105 self-center md:self-auto">
+      <div className="relative mt-8 flex items-center justify-center self-center transition-transform duration-500 ease-out group-hover:scale-105 md:absolute md:top-1/2 md:right-12 md:mt-0 md:-translate-y-1/2 md:self-auto">
         <DecorativeCircles />
 
         <PhoneMockup variant="compact">
-          <div className="absolute inset-0 bg-phone-screen pt-9 px-3">
-            <div className="bg-white rounded-full px-2 py-1.5 mb-3 flex items-center gap-1.5 border border-neutral-200">
-              <span className="text-neutral-400 text-xs">Search an address...</span>
+          <div className="bg-phone-screen absolute inset-0 px-3 pt-9">
+            <div className="mb-3 flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2 py-1.5">
+              <span className="text-xs text-neutral-400">
+                Search an address...
+              </span>
             </div>
-            <p className="text-xs text-neutral-500 mb-0.5">Registered sources</p>
-            <p className="text-xl font-medium text-neutral-900 mb-3">3 fact types</p>
+            <p className="mb-0.5 text-xs text-neutral-500">
+              Registered sources
+            </p>
+            <p className="mb-3 text-xl font-medium text-neutral-900">
+              3 fact types
+            </p>
 
-            <div className="flex gap-1.5 mb-4">
-              <span className="bg-accent text-black text-xs px-2.5 py-1 rounded-full">
+            <div className="mb-4 flex gap-1.5">
+              <span className="bg-accent rounded-full px-2.5 py-1 text-xs text-black">
                 Deploy
               </span>
-              <span className="text-neutral-400 text-xs px-2 py-1">Build</span>
-              <span className="text-neutral-400 text-xs px-2 py-1">Test</span>
+              <span className="px-2 py-1 text-xs text-neutral-400">Build</span>
+              <span className="px-2 py-1 text-xs text-neutral-400">Test</span>
             </div>
           </div>
         </PhoneMockup>
 
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 bg-neutral-900 rounded-2xl px-5 py-3 shadow-xl z-20 whitespace-nowrap">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className="text-neutral-400 text-xs">Test suite</span>
-            <span className="text-neutral-500 text-xs">ⓘ</span>
+        <div className="absolute bottom-0 left-1/2 z-20 -translate-x-1/2 rounded-2xl bg-neutral-900 px-5 py-3 whitespace-nowrap shadow-xl">
+          <div className="mb-0.5 flex items-center gap-2">
+            <span className="text-xs text-neutral-400">Test suite</span>
+            <span className="text-xs text-neutral-500">ⓘ</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-lg font-medium text-white tabular-nums">{TEST_COUNT} passing</span>
-            <span className="text-xs font-medium text-accent bg-accent/20 px-2 py-0.5 rounded">
+            <span className="text-lg font-medium text-white tabular-nums">
+              {TEST_COUNT} passing
+            </span>
+            <span className="text-accent bg-accent/20 rounded px-2 py-0.5 text-xs font-medium">
               ✓ 100%
             </span>
           </div>
@@ -286,13 +298,13 @@ function TrustedByCard(): ReactNode {
     <motion.div
       {...cardAnimation}
       transition={getCardTransition(0.2)}
-      className="group bg-card-secondary rounded-4xl p-6 md:p-8 flex flex-col items-center justify-center text-center min-h-64"
+      className="group bg-card-secondary flex min-h-64 flex-col items-center justify-center rounded-4xl p-6 text-center md:p-8"
     >
       <div className="transition-transform duration-500 ease-out group-hover:scale-110">
-        <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-1">
+        <h3 className="text-card-foreground mb-1 text-2xl leading-tight font-medium md:text-3xl">
           Proven by
         </h3>
-        <h3 className="text-2xl md:text-3xl font-medium text-card-foreground leading-tight mb-5 tabular-nums">
+        <h3 className="text-card-foreground mb-5 text-2xl leading-tight font-medium tabular-nums md:text-3xl">
           {TEST_COUNT} tests
         </h3>
       </div>
@@ -309,7 +321,7 @@ function TrustedByCard(): ReactNode {
         count can settle it in one line instead of taking our word, which is the
         whole argument of the protocol applied to our own marketing page.
       */}
-      <p className="mt-5 text-card-foreground-muted text-xs font-medium">
+      <p className="text-card-foreground-muted mt-5 text-xs font-medium">
         Check it yourself:{" "}
         <code className="text-card-foreground">forge test</code>
       </p>
@@ -322,18 +334,18 @@ function IntegrationsCard(): ReactNode {
     <motion.div
       {...cardAnimation}
       transition={getCardTransition(0.3)}
-      className="group bg-card-primary rounded-4xl p-6 md:p-8 flex flex-col min-h-64"
+      className="group bg-card-primary flex min-h-64 flex-col rounded-4xl p-6 md:p-8"
     >
       <div className="mb-auto transition-transform duration-500 ease-out group-hover:scale-105">
-        <h3 className="text-xl md:text-2xl font-medium text-neutral-900 leading-tight mb-2">
+        <h3 className="mb-2 text-xl leading-tight font-medium text-neutral-900 md:text-2xl">
           Permissionless
         </h3>
-        <p className="text-neutral-700 text-sm">
+        <p className="text-sm text-neutral-700">
           Anyone can submit a proof. No allowlist, no operator, no registration
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 mt-6 transition-transform duration-500 ease-out group-hover:scale-[1.02]">
+      <div className="mt-6 flex flex-col gap-2 transition-transform duration-500 ease-out group-hover:scale-[1.02]">
         {DEPLOYMENT_STATS.map((stat) => (
           <DeploymentStat key={stat.icon} {...stat} />
         ))}
@@ -344,13 +356,13 @@ function IntegrationsCard(): ReactNode {
 
 export function FeaturesBento(): ReactNode {
   return (
-    <section className="w-full px-6 mb-32 bg-background">
-      <div className="max-w-5xl mx-auto">
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1.5fr] gap-4">
+    <section className="bg-background mb-32 w-full px-6">
+      <div className="mx-auto max-w-5xl">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1.5fr]">
           <StepByStepCard />
           <DashboardCard />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TrustedByCard />
             <IntegrationsCard />
           </div>
