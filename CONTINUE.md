@@ -52,8 +52,15 @@ Read `docs/PRD.md` §2 before doing anything. It explains why v3.0 exists.
 
 ### The one address with a real proven fact
 
+> **Superseded on 2026-09-12.** `0x83900c0EDA960A31899d51aae9B9C180A7e21711` is the
+> v1 subject and reads **0** on the v2 registry. v2 had been deployed and fully
+> configured but never seeded, so every published claim pointed at an empty
+> contract. The repayment below was proven into v2 on 2026-09-12
+> (tx `0x86862996beab78c03ba87269061ebdca31ef045e2827c482f7bce043ebc00d57`), and
+> this is the address the demo now uses.
+
 ```
-0x83900c0EDA960A31899d51aae9B9C180A7e21711
+0x2d39338894d7d3be4908d6fbfc3500440c788f01
 ```
 
 Reads live, and this is the demo:

@@ -574,6 +574,7 @@ registry bug harms every consumer, not one app.**
 | **Live interface** | [vouch-registry.vercel.app](https://vouch-registry.vercel.app) |
 | **Live demo** | [/create](https://vouch-registry.vercel.app/create) |
 | **Registry contract** | [Blockscout](https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46) |
+| **Check every claim yourself** | [`scripts/verify/Vouch.postman_collection.json`](scripts/verify/Vouch.postman_collection.json) — import into Postman, press Run. 11 requests, each asserting the exact value this README promises. No wallet, no API key, no node. |
 | **The forged event** | [Etherscan](https://sepolia.etherscan.io/tx/0x6585e3652a5a5cb8808182be76280771069203f75b90e9777116c5eaad316cf3) |
 | **Attestcoin docs** | [docs.attestcoin.org](https://docs.attestcoin.org) |
 

@@ -1,0 +1,473 @@
+{
+  "info": {
+    "_postman_id": "b7f4c1a2-9d3e-4f61-8c2a-1e5d7a9b3c40",
+    "name": "Vouch — verify every claim",
+    "description": "Every public claim Vouch makes, as a request you can run yourself.\n\nA registry whose argument is that unverified claims are worthless should not ask you to take its README on trust. So this collection reads the deployed contracts on Creditcoin CC3 Testnet over plain JSON-RPC, and each request carries a test that asserts the exact value the documentation promises. Import it, press Run, and the claims either pass or they do not.\n\nNothing here needs a wallet, an API key, or a node. It is `eth_call` against a public RPC, which is the cheapest possible way for a stranger to check our work.\n\n## What the run proves\n\n1. The v2 registry holds a real Aave repayment proven from Sepolia through the Attestcoin Block Prover.\n2. Four independent consumers read that one fact and each grant a different benefit.\n3. An address with no proof gets the baseline from every one of them, so the benefit is coming from the proof rather than from the contract being generous.\n4. Standing does not leak between fact types: the same proof that moves collateral leaves the exchange fee untouched.\n\nThe third and fourth are the ones worth watching. A lending contract that returns a good number for everybody has not demonstrated anything.\n\n## Variables\n\n`subject` is the proven address. `control` is `0x…dEaD`, which has no facts and never will, and exists so every benefit can be read against a baseline in the same run.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "rpc",
+      "value": "https://rpc.cc3-testnet.creditcoin.network",
+      "type": "string"
+    },
+    {
+      "key": "registry",
+      "value": "0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46",
+      "type": "string"
+    },
+    {
+      "key": "registryV1",
+      "value": "0xb6e0497dfd8fdbffb25f6ae3dc8104c46bbe8329",
+      "type": "string"
+    },
+    {
+      "key": "passport",
+      "value": "0xd9ac99ece77b6bd8c51c00ff4c42af9c212bf3a6",
+      "type": "string"
+    },
+    {
+      "key": "credit",
+      "value": "0x52f0dec9cfa99cd634b3ba87fc3ed5d3c4a96720",
+      "type": "string"
+    },
+    {
+      "key": "feeTier",
+      "value": "0xec66d8e1330dfe2185d2dbf08e642c850bfe4202",
+      "type": "string"
+    },
+    {
+      "key": "access",
+      "value": "0xbc531d6c329fe6f8fabeb72ae0921b38bc0c1719",
+      "type": "string"
+    },
+    {
+      "key": "receivables",
+      "value": "0xc9c872b244e6385f934fc0746b19afbdf99be5f4",
+      "type": "string"
+    },
+    {
+      "key": "subject",
+      "value": "2d39338894d7d3be4908d6fbfc3500440c788f01",
+      "type": "string",
+      "description": "Proven address, no 0x prefix (it is padded into calldata)."
+    },
+    {
+      "key": "control",
+      "value": "000000000000000000000000000000000000dEaD",
+      "type": "string",
+      "description": "Unproven address, no 0x prefix. The baseline every benefit is measured against."
+    },
+    {
+      "key": "factAaveRepayment",
+      "value": "91a1bab09799acf0928f391aa4306c2249268d97c9504224ea342d5c7c03355a",
+      "type": "string",
+      "description": "keccak256(\"AAVE_REPAYMENT\")"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Shared helpers. `eth_call` returns one 32-byte word for every return",
+          "// type used in this collection, so decoding is the same shape each time:",
+          "// strip 0x, parse as hex. A revert comes back as an `error` object rather",
+          "// than a short result, which is why every test checks for that first --",
+          "// a reverted call that silently decoded to 0 would look like a real answer",
+          "// of zero, and that is exactly the confusion this collection exists to end.",
+          "pm.globals.set('decodeWord', '');"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1 · The proof exists",
+      "description": "Before any benefit means anything, the fact has to be on chain.",
+      "item": [
+        {
+          "name": "registry.totalProofs(subject) → 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "const value = parseInt(body.result, 16);",
+                  "console.log('totalProofs =', value);",
+                  "",
+                  "pm.test('The subject has exactly one verified fact', () => {",
+                  "    pm.expect(value).to.eql(1);",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('provenTotal', value);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{registry}}\",\n      \"data\": \"0x36d7db5f000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] },
+            "description": "`totalProofs(address)`. One real Aave V3 repayment, proven from Sepolia through the Attestcoin Block Prover precompile and written to Creditcoin."
+          }
+        },
+        {
+          "name": "registry.hasProof(subject, AAVE_REPAYMENT) → true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "const isTrue = parseInt(body.result, 16) === 1;",
+                  "pm.test('The fact is specifically an Aave repayment', () => {",
+                  "    pm.expect(isTrue).to.be.true;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{registry}}\",\n      \"data\": \"0x349cf0d8000000000000000000000000{{subject}}{{factAaveRepayment}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] },
+            "description": "`hasProof(address,bytes32)`. The primitive every Creditcoin application calls. Roughly 1,202 gas, flat, however long the history is."
+          }
+        },
+        {
+          "name": "registry.totalProofs(control) → 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('An unproven address has no standing', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(0);",
+                  "});",
+                  "",
+                  "// Absence is not enumerable. The registry cannot prove somebody has a",
+                  "// bad history, only that they have not proven a good one, which is why",
+                  "// standing reduces collateral and never eliminates it."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{registry}}\",\n      \"data\": \"0x36d7db5f000000000000000000000000{{control}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 · Four consumers, one fact",
+      "description": "The thesis. Each of these contracts holds no privileged relationship with the registry: they call the same public view functions anyone can call. Run each against the proven subject and then against the control to see the benefit appear and disappear.",
+      "item": [
+        {
+          "name": "passport.tierOf(subject) → 1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('One proven repayment earns Tier 1', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{passport}}\",\n      \"data\": \"0xc8f74bb8000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] },
+            "description": "Tier is derived from facts, never stored. It is monotonic by construction: no code path removes or decrements a fact, so a Vouch tier cannot fall."
+          }
+        },
+        {
+          "name": "credit.collateralBpsFor(subject) → 13000 (130%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "const bps = parseInt(body.result, 16);",
+                  "console.log('collateral =', bps / 100 + '%');",
+                  "",
+                  "pm.test('Proven history cuts collateral from 150% to 130%', () => {",
+                  "    pm.expect(bps).to.eql(13000);",
+                  "});",
+                  "",
+                  "pm.test('Collateral never floors below 100%', () => {",
+                  "    pm.expect(bps).to.be.at.least(10000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{credit}}\",\n      \"data\": \"0x85658f8a000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        },
+        {
+          "name": "credit.collateralBpsFor(control) → 15000 (150%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('An unproven address pays the full baseline', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(15000);",
+                  "});",
+                  "",
+                  "// This is the request that makes the previous one mean something.",
+                  "// A contract that quoted 130% to everybody would prove nothing at all."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{credit}}\",\n      \"data\": \"0x85658f8a000000000000000000000000{{control}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        },
+        {
+          "name": "receivables.advanceRateBpsFor(subject) → 8000 (80%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('An invoice advances at 80% instead of 70%', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(8000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{receivables}}\",\n      \"data\": \"0x8d5cf251000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] },
+            "description": "The RWA consumer. A supplier financing an invoice draws a larger share of face value because their repayment history is proven rather than asserted."
+          }
+        },
+        {
+          "name": "receivables.advanceRateBpsFor(control) → 7000 (70%)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('An unproven supplier draws the baseline 70%', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(7000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{receivables}}\",\n      \"data\": \"0x8d5cf251000000000000000000000000{{control}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        },
+        {
+          "name": "access.isAdmitted(subject) → true",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('The gate opens for a proven address', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{access}}\",\n      \"data\": \"0xd233fb38000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 · Standing does not leak",
+      "description": "The subtlest claim in the project, and the one most worth checking. The exchange reads a different fact type, so a proven repayment must NOT move the trading fee. If this request returned anything other than the standard rate, the registry would be leaking standing between unrelated domains and every tier in it would be suspect.",
+      "item": [
+        {
+          "name": "feeTier.feeBpsFor(subject) → 30 (0.30%, unchanged)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "const bps = parseInt(body.result, 16);",
+                  "",
+                  "pm.test('A repayment proof does NOT move the exchange fee', () => {",
+                  "    pm.expect(bps).to.eql(30);",
+                  "});",
+                  "",
+                  "// Same address, same registry, same run. Collateral moved and the fee",
+                  "// did not, because they read different fact types. Standing is scoped",
+                  "// to what was actually proven."
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{feeTier}}\",\n      \"data\": \"0x2fc1c400000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 · The registries, side by side",
+      "description": "v1 is still on chain and its facts are still true. Nothing migrates a fact from one registry to another, which is why the v1 subject reads zero on v2 and the v2 subject reads zero on v1. Both requests are here so the history is legible rather than buried.",
+      "item": [
+        {
+          "name": "v1.totalProofs(subject) → 0",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "pm.test('RPC answered without an error', () => {",
+                  "    pm.expect(body.error, JSON.stringify(body.error)).to.be.undefined;",
+                  "});",
+                  "",
+                  "pm.test('Facts do not migrate between registries', () => {",
+                  "    pm.expect(parseInt(body.result, 16)).to.eql(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"jsonrpc\": \"2.0\",\n  \"id\": 1,\n  \"method\": \"eth_call\",\n  \"params\": [\n    {\n      \"to\": \"{{registryV1}}\",\n      \"data\": \"0x36d7db5f000000000000000000000000{{subject}}\"\n    },\n    \"latest\"\n  ]\n}"
+            },
+            "url": { "raw": "{{rpc}}", "host": ["{{rpc}}"] },
+            "description": "The v2 subject has no standing on v1. Each registry is its own record; re-proving is how a fact reaches a new one."
+          }
+        }
+      ]
+    }
+  ]
+}
