@@ -47,6 +47,10 @@ export const heroConfig = {
   subheadline:
     "A shared standing registry for Creditcoin issuers. One Attestcoin proof of what a borrower actually did on another chain, stored once, readable from your contract for the cost of a storage read.",
   cta: {
+    text: "Prove a repayment on-chain",
+    href: "/verify",
+  },
+  secondaryCta: {
     text: "Check an address",
     href: "/passport",
   },
@@ -66,8 +70,8 @@ export const howItWorksConfig = {
   description:
     "Discovery finds the borrower's event, the scheduler batches it, Attestcoin proves it, and the registry stores it. Everything the issuer does after that is a view call.",
   cta: {
-    text: "Read the integration guide",
-    href: "/developers",
+    text: "Run the live demo",
+    href: "/create",
   },
 };
 

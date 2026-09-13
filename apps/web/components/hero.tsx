@@ -146,20 +146,32 @@ export function Hero(): ReactNode {
             {heroConfig.subheadline}
           </motion.p>
 
-          <motion.a
-            href={heroConfig.cta.href}
-            className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
-            variants={fadeInScale}
-            transition={{ duration: 0.8, ease }}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <span className="absolute right-0 inset-y-0 w-[calc(100%-2rem)] max-[850px]:w-full rounded-xl bg-accent" />
-            <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">{heroConfig.cta.text}</span>
-            <span className="relative -left-px z-10 w-11 h-11 rounded-xl flex items-center justify-center text-black">
-              <ArrowDownRight className="w-5 h-5 transition-transform duration-300 group-hover:-rotate-45" />
-            </span>
-          </motion.a>
+          <div className="flex flex-wrap items-center gap-3 max-[850px]:w-full max-[850px]:flex-col max-[850px]:items-stretch">
+            <motion.a
+              href={heroConfig.cta.href}
+              className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
+              variants={fadeInScale}
+              transition={{ duration: 0.8, ease }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <span className="absolute right-0 inset-y-0 w-[calc(100%-2rem)] max-[850px]:w-full rounded-xl bg-accent" />
+              <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">{heroConfig.cta.text}</span>
+              <span className="relative -left-px z-10 w-11 h-11 rounded-xl flex items-center justify-center text-black">
+                <ArrowDownRight className="w-5 h-5 transition-transform duration-300 group-hover:-rotate-45" />
+              </span>
+            </motion.a>
+            <motion.a
+              href={heroConfig.secondaryCta.href}
+              className="inline-flex items-center justify-center px-6 py-3 rounded-xl border border-black/15 text-black font-medium hover:bg-black/5 transition-colors max-[850px]:w-full"
+              variants={fadeInScale}
+              transition={{ duration: 0.8, ease }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {heroConfig.secondaryCta.text}
+            </motion.a>
+          </div>
         </motion.div>
       </div>
 
