@@ -148,8 +148,18 @@ export function ConsumerReads({ subject }: { subject?: string | null }) {
  * Block Prover precompile and written to the registry on Creditcoin. It is
  * offered as a starting point because an empty dashboard demonstrates nothing,
  * and inventing data to fill it would demonstrate less than nothing.
+ *
+ * THE CASING IS LOAD-BEARING. viem validates EIP-55 on any mixed-case address
+ * and throws `InvalidAddressError` when the checksum does not verify, before a
+ * request is ever sent. A hand-typed address here is therefore not a cosmetic
+ * detail: an earlier revision of this constant read
+ * `0x4c8EA5e41ed3dBe14a4cf0B79ACcb5e5D3Ab88F9`, which fails checksum, so the
+ * dashboard's one-click lookup rendered "Registry read failed" over a registry
+ * that answers correctly. The value below is the checksummed form the contract
+ * itself returns -- `cast to-check-sum-address`, or any explorer, will confirm
+ * it. Verify before editing.
  */
-export const PROVEN_DEMO_ADDRESS = "0x4c8EA5e41ed3dBe14a4cf0B79ACcb5e5D3Ab88F9";
+export const PROVEN_DEMO_ADDRESS = "0x4c8ea5e41eD3DBE14a4cf0b79ACcb5E5d3AB88F9";
 
 export function ProvenAddressHint({ onUse }: { onUse: (address: string) => void }) {
   return (
