@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { Check, Eyebrow, Metric } from "@/components/dashboard/console";
 import { SkeletonRows } from "@/components/dashboard/primitives";
 import { useRegistryLog } from "@/hooks/useRegistryLog";
 import { addresses, explorerUrl, NETWORK } from "@/lib/contracts";
 import { REGISTERED_FACTS, factById } from "@vouch/schemas";
+
+const PAGE_SIZE = 25;
 
 /**
  * Creditcoin Standing Registry — the ledger.
@@ -40,6 +43,26 @@ export default function ExplorerPage() {
   const entries = log.data ?? [];
 
   const subjects = new Set(entries.map((e) => e.subject.toLowerCase()));
+
+  const [subjectFilter, setSubjectFilter] = useState("");
+  const [factFilter, setFactFilter] = useState<string>("all");
+  const [page, setPage] = useState(0);
+
+  const filtered = useMemo(() => {
+    const q = subjectFilter.trim().toLowerCase();
+    return entries.filter((e) => {
+      const bySubject = q === "" || e.subject.toLowerCase().includes(q);
+      const byFact = factFilter === "all" || e.factType === factFilter;
+      return bySubject && byFact;
+    });
+  }, [entries, subjectFilter, factFilter]);
+
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, pageCount - 1);
+  const paged = filtered.slice(
+    currentPage * PAGE_SIZE,
+    (currentPage + 1) * PAGE_SIZE,
+  );
 
   return (
     <>
@@ -142,8 +165,40 @@ export default function ExplorerPage() {
             </p>
           </div>
           <span className="font-mono text-[11px] text-[var(--vouch-text-faint)]">
-            {log.isLoading ? "loading" : `${entries.length} of ${entries.length}`}
+            {log.isLoading
+              ? "loading"
+              : `${filtered.length} of ${entries.length}`}
           </span>
+        </div>
+
+        {/* Filters. Client-side only — we already have every entry in memory. */}
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            aria-label="Filter by subject address"
+            className="w-full flex-1 rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-3 py-2 font-mono text-[12px] text-[var(--vouch-text)] placeholder:text-[var(--vouch-text-faint)] focus:border-[var(--vouch-border-strong)] focus:outline-none"
+            onChange={(e) => {
+              setSubjectFilter(e.target.value);
+              setPage(0);
+            }}
+            placeholder="Filter by subject address (any substring, e.g. 0x2d39…)"
+            value={subjectFilter}
+          />
+          <select
+            aria-label="Filter by fact type"
+            className="rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-3 py-2 font-mono text-[12px] text-[var(--vouch-text)] focus:border-[var(--vouch-border-strong)] focus:outline-none"
+            onChange={(e) => {
+              setFactFilter(e.target.value);
+              setPage(0);
+            }}
+            value={factFilter}
+          >
+            <option value="all">Any fact type</option>
+            {REGISTERED_FACTS.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
         </div>
 
         {log.isLoading ? <SkeletonRows rows={4} /> : null}
@@ -159,7 +214,15 @@ export default function ExplorerPage() {
           </div>
         ) : null}
 
-        {!log.isLoading && entries.length > 0 ? (
+        {!log.isLoading && entries.length > 0 && filtered.length === 0 ? (
+          <div className="rounded-[var(--vouch-radius)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-4 py-8 text-center">
+            <p className="text-[13px] text-[var(--vouch-text-muted)]">
+              No entries match this filter.
+            </p>
+          </div>
+        ) : null}
+
+        {!log.isLoading && paged.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-left">
               <thead>
@@ -175,7 +238,7 @@ export default function ExplorerPage() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e) => {
+                {paged.map((e) => {
                   const def = factById(e.factType);
                   return (
                     <tr
@@ -216,6 +279,30 @@ export default function ExplorerPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        ) : null}
+
+        {pageCount > 1 ? (
+          <div className="mt-4 flex items-center justify-between gap-3">
+            <button
+              className="rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-3 py-1.5 font-mono text-[11px] text-[var(--vouch-text)] transition-colors hover:border-[var(--vouch-border-strong)] disabled:opacity-40"
+              disabled={currentPage === 0}
+              onClick={() => setPage(currentPage - 1)}
+              type="button"
+            >
+              ← previous
+            </button>
+            <span className="font-mono text-[11px] text-[var(--vouch-text-faint)]">
+              page {currentPage + 1} / {pageCount}
+            </span>
+            <button
+              className="rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-3 py-1.5 font-mono text-[11px] text-[var(--vouch-text)] transition-colors hover:border-[var(--vouch-border-strong)] disabled:opacity-40"
+              disabled={currentPage >= pageCount - 1}
+              onClick={() => setPage(currentPage + 1)}
+              type="button"
+            >
+              next →
+            </button>
           </div>
         ) : null}
       </section>

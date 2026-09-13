@@ -138,8 +138,29 @@ async function alreadyRecorded(
 
 export const maxDuration = 120;
 
-export async function POST(): Promise<NextResponse> {
+/**
+ * A valid EVM address string, or null.
+ *
+ * Used to filter discovery to one borrower. The registry writes standing
+ * against the SUBJECT read from the proven log — always the borrower, never
+ * `msg.sender` — so filtering here is a UX convenience, not a security surface.
+ */
+function parseSubject(value: string | null): `0x${string}` | null {
+  if (!value) return null;
+  const v = value.trim().toLowerCase();
+  return /^0x[0-9a-f]{40}$/.test(v) ? (v as `0x${string}`) : null;
+}
+
+async function handle(request: Request): Promise<NextResponse> {
   try {
+    const url = new URL(request.url);
+    const targetSubject = parseSubject(url.searchParams.get("subject"));
+    // A subject filter deserves a wider scan: the caller has a specific address
+    // in mind, and returning "no repayment found" for an address that DID repay
+    // months ago is a worse failure than a slower request.
+    const lookback = targetSubject ? 200_000n : 60_000n;
+    const chunk = targetSubject ? 20_000n : 8_000n;
+
     const client = createPublicClient({
       chain: sepolia,
       transport: http(SEPOLIA_RPC),
@@ -153,16 +174,21 @@ export async function POST(): Promise<NextResponse> {
     let foundReceiptLogIndex = -1;
     let foundReceipt: Awaited<ReturnType<typeof client.getTransactionReceipt>> | null = null;
 
-    for (let offset = 2_000n; offset < 60_000n && !found; offset += 8_000n) {
+    for (let offset = 2_000n; offset < 2_000n + lookback && !found; offset += chunk) {
       const toBlock = head - offset;
       const logs = await client.getLogs({
         address: AAVE_POOL_SEPOLIA,
-        fromBlock: toBlock - 8_000n,
+        fromBlock: toBlock - chunk,
         toBlock,
       });
 
       const matchesPin = (l: Log) =>
         `0x${l.topics[1]?.slice(-40)}`.toLowerCase() === PINNED_RESERVE;
+      // topic[2] is `user`, the borrower whose debt was cleared. When the
+      // caller passed a subject, we only care about their repayments.
+      const matchesSubject = (l: Log) =>
+        !targetSubject ||
+        `0x${l.topics[2]?.slice(-40)}`.toLowerCase() === targetSubject;
 
       // Two preferences, both learned from a failed run.
       //
@@ -173,7 +199,9 @@ export async function POST(): Promise<NextResponse> {
       // back to any repayment keeps the route useful against a registry with no
       // asset pinned -- the submission then either succeeds or reverts
       // honestly, which is the registry's decision to make, not the scanner's.
-      const repayments = logs.filter((l) => l.topics[0] === REPAY_TOPIC);
+      const repayments = logs
+        .filter((l) => l.topics[0] === REPAY_TOPIC)
+        .filter(matchesSubject);
       const candidates = [
         ...repayments.filter(matchesPin).reverse(),
         ...repayments.filter((l) => !matchesPin(l)).reverse(),
@@ -211,8 +239,11 @@ export async function POST(): Promise<NextResponse> {
     if (!found || !found.transactionHash || foundReceipt === null) {
       return NextResponse.json(
         {
-          error: "No Aave repayment found on Sepolia in the searched range.",
+          error: targetSubject
+            ? `No unproven Aave repayment found for ${targetSubject} in the last ~${(Number(lookback) / 1000).toFixed(0)}k Sepolia blocks. Every match may already be recorded on Vouch — or the address has no repayment history yet.`
+            : "No Aave repayment found on Sepolia in the searched range.",
           stage: "discovery",
+          subject: targetSubject,
         },
         { status: 404 }
       );
@@ -300,4 +331,14 @@ export async function POST(): Promise<NextResponse> {
       { status: 500 }
     );
   }
+}
+
+// Preserve the previous "just run it" affordance the live-demo page uses, and
+// also expose the same discovery via GET so a browser can hit it with a query
+// string. Both call the same handler; the subject filter comes from the URL.
+export async function POST(request: Request): Promise<NextResponse> {
+  return handle(request);
+}
+export async function GET(request: Request): Promise<NextResponse> {
+  return handle(request);
 }

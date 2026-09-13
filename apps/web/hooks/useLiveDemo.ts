@@ -154,7 +154,7 @@ export function useLiveDemo() {
     []
   );
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (targetSubject?: string) => {
     const registry = addresses.registry;
     if (!registry) {
       setError("The registry address is not configured for this network.");
@@ -175,10 +175,19 @@ export function useLiveDemo() {
       // builder is an axios client, and the transaction it proves is the one
       // discovery just found, so splitting them would mean shipping a log back
       // and forth for no benefit.
-      mark("discover", "running", "Scanning Sepolia for an Aave Repay…");
+      mark(
+        "discover",
+        "running",
+        targetSubject
+          ? `Scanning Sepolia for a repayment by ${targetSubject.slice(0, 10)}…`
+          : "Scanning Sepolia for an Aave Repay…",
+      );
       mark("proof", "running", "Asking the Attestcoin prover…");
 
-      const response = await fetch("/api/prove", { method: "POST" });
+      const url = targetSubject
+        ? `/api/prove?subject=${targetSubject.toLowerCase()}`
+        : "/api/prove";
+      const response = await fetch(url, { method: "POST" });
       const payload = (await response.json()) as Record<string, unknown>;
 
       if (!response.ok) {

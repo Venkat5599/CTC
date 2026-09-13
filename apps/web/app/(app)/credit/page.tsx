@@ -1,13 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { parseAbi } from "viem";
+import { useQuery } from "@tanstack/react-query";
 
-import { Check, Eyebrow, TermsShift } from "@/components/dashboard/console";
+import { Check, DataField, Eyebrow, TermsShift } from "@/components/dashboard/console";
 import { AddressField, Section } from "@/components/dashboard/data";
-import { SkeletonRows } from "@/components/dashboard/primitives";
+import { Button, SkeletonRows } from "@/components/dashboard/primitives";
 import { ProvenAddressHint } from "@/components/vouch/consumer-reads";
 import { useConsumers } from "@/hooks/useConsumers";
 import { useWallet } from "@/hooks/useWallet";
+import { addresses, explorerUrl } from "@/lib/contracts";
+import { creditcoinClient } from "@/lib/viem";
 
 /**
  * Credit decisions and standing rules.
@@ -63,10 +68,92 @@ const RULES = [
   },
 ] as const;
 
-export default function CreditPage() {
+const RECEIVABLES_ABI = parseAbi([
+  "function advanceFor(address supplier, uint256 faceValue) view returns (uint256)",
+  "function retentionFor(address supplier, uint256 faceValue) view returns (uint256)",
+  "function fundedRail() view returns (bool)",
+  "function liquidity() view returns (uint256)",
+]);
+
+/** A real underwriting quote from the deployed receivables facility. */
+function useReceivablesQuote(subject: string | null, faceValueUsd: string) {
+  const receivables = addresses.receivables;
+  const faceValueNum = Number(faceValueUsd);
+  const enabled =
+    Boolean(subject) && Boolean(receivables) && faceValueNum > 0 && Number.isFinite(faceValueNum);
+
+  // USD entered as human amount; contract math is in the settlement token's
+  // smallest units. We keep 6 decimals (matches USDC on the funded rail).
+  const faceUnits = enabled ? BigInt(Math.round(faceValueNum * 1_000_000)) : 0n;
+
+  return useQuery({
+    queryKey: ["receivables-quote", subject, faceUnits.toString()],
+    enabled,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const [advance, retention, funded, liquidity] = await Promise.all([
+        creditcoinClient.readContract({
+          address: receivables!,
+          abi: RECEIVABLES_ABI,
+          functionName: "advanceFor",
+          args: [subject as `0x${string}`, faceUnits],
+        }),
+        creditcoinClient.readContract({
+          address: receivables!,
+          abi: RECEIVABLES_ABI,
+          functionName: "retentionFor",
+          args: [subject as `0x${string}`, faceUnits],
+        }),
+        creditcoinClient.readContract({
+          address: receivables!,
+          abi: RECEIVABLES_ABI,
+          functionName: "fundedRail",
+        }),
+        creditcoinClient.readContract({
+          address: receivables!,
+          abi: RECEIVABLES_ABI,
+          functionName: "liquidity",
+        }),
+      ]);
+      return {
+        advanceUnits: advance as bigint,
+        retentionUnits: retention as bigint,
+        funded: funded as boolean,
+        liquidityUnits: liquidity as bigint,
+      };
+    },
+  });
+}
+
+function CreditPageInner() {
   const { address } = useWallet();
+  const params = useSearchParams();
+  const urlAddress = params.get("address");
   const [subject, setSubject] = useState<string | null>(null);
+  useEffect(() => {
+    if (urlAddress && /^0x[0-9a-fA-F]{40}$/.test(urlAddress)) {
+      setSubject(urlAddress.toLowerCase());
+    }
+  }, [urlAddress]);
   const active = subject ?? address ?? null;
+
+  const [faceValue, setFaceValue] = useState("10000");
+  const quote = useReceivablesQuote(active, faceValue);
+
+  const fmtUsd = (units?: bigint | null) => {
+    if (units === undefined || units === null) return "—";
+    return `$${(Number(units) / 1_000_000).toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+
+  const advanceBps = useMemo(() => {
+    if (!quote.data || Number(faceValue) <= 0) return null;
+    const face = BigInt(Math.round(Number(faceValue) * 1_000_000));
+    if (face === 0n) return null;
+    return Number((quote.data.advanceUnits * 10_000n) / face);
+  }, [quote.data, faceValue]);
 
   const consumers = useConsumers(active ?? undefined);
   const reads = consumers.data ?? [];
@@ -143,6 +230,107 @@ export default function CreditPage() {
           </div>
         </Section>
       </section>
+
+      {active ? (
+        <section className="mb-8 rounded-[var(--vouch-radius)] border border-[var(--vouch-border)] bg-[var(--vouch-surface)] p-5">
+          <Eyebrow tone="accent">Financing calculator</Eyebrow>
+          <h2 className="mt-2 text-[18px] font-semibold tracking-[-0.02em]">
+            Underwrite an invoice, live, against the deployed facility
+          </h2>
+          <p className="mt-1.5 max-w-[80ch] text-[12.5px] leading-[1.55] text-[var(--vouch-text-muted)]">
+            Every number below is a direct <code>eth_call</code> to{" "}
+            <code>VouchReceivablesFacility.advanceFor(supplier, faceValue)</code>{" "}
+            and <code>retentionFor(...)</code>. Change the face value or the
+            address and re-run the same math the contract runs. No policy is
+            paraphrased here.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+            <label className="flex-1">
+              <span className="mb-1 block text-[11px] tracking-[0.08em] text-[var(--vouch-text-faint)] uppercase">
+                Invoice face value (USD)
+              </span>
+              <input
+                aria-label="Face value in USD"
+                className="w-full rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-3 py-2 font-mono text-[14px] tabular-nums text-[var(--vouch-text)] focus:border-[var(--vouch-border-strong)] focus:outline-none"
+                inputMode="decimal"
+                min={0}
+                onChange={(e) => setFaceValue(e.target.value)}
+                type="number"
+                value={faceValue}
+              />
+            </label>
+            <div className="flex gap-2">
+              {["1000", "10000", "100000"].map((v) => (
+                <Button
+                  key={v}
+                  onClick={() => setFaceValue(v)}
+                  variant={faceValue === v ? "primary" : "ghost"}
+                >
+                  ${Number(v).toLocaleString()}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {quote.isLoading ? <SkeletonRows rows={2} /> : null}
+
+          {quote.data ? (
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-[var(--vouch-radius)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] p-4">
+                <Eyebrow>Advance to supplier</Eyebrow>
+                <p className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-[var(--vouch-primary)]">
+                  {fmtUsd(quote.data.advanceUnits)}
+                </p>
+                <p className="mt-0.5 text-[11.5px] text-[var(--vouch-text-faint)]">
+                  {advanceBps === null
+                    ? " "
+                    : `${(advanceBps / 100).toFixed(2)}% of face — the exact number the drawdown function would pay out.`}
+                </p>
+              </div>
+              <div className="rounded-[var(--vouch-radius)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] p-4">
+                <Eyebrow>Retention held</Eyebrow>
+                <p className="mt-1 font-mono text-[22px] font-semibold tabular-nums text-[var(--vouch-text-muted)]">
+                  {fmtUsd(quote.data.retentionUnits)}
+                </p>
+                <p className="mt-0.5 text-[11.5px] text-[var(--vouch-text-faint)]">
+                  Kept as loss cushion until settlement. Never zero: this
+                  facility has no liquidation path.
+                </p>
+              </div>
+              <div className="rounded-[var(--vouch-radius)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] p-4">
+                <Eyebrow>Settlement rail</Eyebrow>
+                <p className="mt-1 text-[13.5px] font-semibold text-[var(--vouch-text)]">
+                  {quote.data.funded ? "Funded (on-chain USDC)" : "Bookkeeping only"}
+                </p>
+                <p className="mt-0.5 text-[11.5px] text-[var(--vouch-text-faint)]">
+                  {quote.data.funded
+                    ? `Pool liquidity: ${fmtUsd(quote.data.liquidityUnits)}. A drawdown would move tokens now.`
+                    : "The advance rate is the underwriting decision. Cash movement is the financier's rail — off chain until a token pool is funded."}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
+          {quote.error ? (
+            <p className="mt-3 rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-danger)]/30 bg-[var(--vouch-danger)]/10 px-3 py-2 text-[12px] text-[var(--vouch-danger)]">
+              The receivables facility rejected the read:{" "}
+              {String(quote.error instanceof Error ? quote.error.message.split("\n")[0] : quote.error)}
+            </p>
+          ) : null}
+
+          {addresses.receivables ? (
+            <div className="mt-4">
+              <DataField
+                href={explorerUrl("address", addresses.receivables)}
+                label="Contract"
+              >
+                {addresses.receivables}
+              </DataField>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
       <section className="mb-8">
         <div className="mb-4">
@@ -224,3 +412,13 @@ export default function CreditPage() {
     </>
   );
 }
+
+// useSearchParams requires a Suspense boundary at build time. A single frame
+// placeholder is enough; nothing on this page is meaningful without the URL.
+const CreditPage = (): ReactNode => (
+  <Suspense fallback={null}>
+    <CreditPageInner />
+  </Suspense>
+);
+
+export default CreditPage;

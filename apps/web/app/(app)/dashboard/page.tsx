@@ -221,6 +221,14 @@ export default function DashboardPage() {
                   absence of an event is not provable, so no consumer should read this as evidence
                   of good behaviour.
                 </p>
+                <div className="mt-3">
+                  <Link
+                    className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[var(--vouch-primary)] hover:underline"
+                    href={`/verify?subject=${active}`}
+                  >
+                    → Prove standing for this address
+                  </Link>
+                </div>
               </div>
             ) : null}
 
