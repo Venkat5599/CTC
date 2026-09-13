@@ -12,8 +12,8 @@
   <a href="https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46">
     <img src="https://img.shields.io/badge/🔴_LIVE-Creditcoin_CC3-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live on CC3" />
   </a>
-  <a href="https://vouch-registry.vercel.app">
-    <img src="https://img.shields.io/badge/▶_DEMO-vouch--registry-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live demo" />
+  <a href="https://ctc-web-coral.vercel.app">
+    <img src="https://img.shields.io/badge/▶_DEMO-ctc--web-4edea3?style=for-the-badge&labelColor=0c0e10" alt="Live demo" />
   </a>
   <img src="https://img.shields.io/badge/128_TESTS-0_failed-10b981?style=for-the-badge&labelColor=0c0e10" alt="128 tests" />
   <img src="https://img.shields.io/badge/Solidity-0.8.28-363636?style=for-the-badge&logo=solidity" alt="Solidity" />
@@ -492,7 +492,7 @@ cd apps/web && bun run dev     # http://localhost:3000
 ```
 
 **The live demo needs no local setup:** open
-[vouch-registry.vercel.app/create](https://vouch-registry.vercel.app/create),
+[ctc-web-coral.vercel.app/create](https://ctc-web-coral.vercel.app/create),
 connect a wallet on CC3, and click **Run the demo**. It finds a real Aave
 repayment on Sepolia, obtains a genuine Attestcoin proof, and submits it to the
 registry **from your wallet** — no relayer, no server key, no trusted operator.
@@ -571,8 +571,8 @@ registry bug harms every consumer, not one app.**
 
 | Resource | URL |
 |---|---|
-| **Live interface** | [vouch-registry.vercel.app](https://vouch-registry.vercel.app) |
-| **Live demo** | [/create](https://vouch-registry.vercel.app/create) |
+| **Live interface** | [ctc-web-coral.vercel.app](https://ctc-web-coral.vercel.app) |
+| **Live demo** | [/create](https://ctc-web-coral.vercel.app/create) |
 | **Registry contract** | [Blockscout](https://creditcoin-testnet.blockscout.com/address/0xc5c70bc6cb61ad5c2370c69c8410d3d988e82d46) |
 | **Check every claim yourself** | [`scripts/verify/Vouch.postman_collection.json`](scripts/verify/Vouch.postman_collection.json) — import into Postman, press Run. 11 requests, each asserting the exact value this README promises. No wallet, no API key, no node. |
 | **The forged event** | [Etherscan](https://sepolia.etherscan.io/tx/0x6585e3652a5a5cb8808182be76280771069203f75b90e9777116c5eaad316cf3) |
