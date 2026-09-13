@@ -163,7 +163,6 @@ node scripts/seed/prove-fact.mjs
 - **M9** — deck and demo video. Only the user can record these.
 - **PRD Q2** — pin the exact Aave V3 mainnet Pool address and `Repay` ABI against the deployed contract.
 - **PRD Q1** — confirm the deadline in Discord `#buidl-ctc-qna`. The brief says 09-13; the AMA reportedly said 09-06.
-- **Colosseum PAT** — was pasted into a chat log several times. Rotate it at https://arena.colosseum.org/copilot.
 - Frontend has not been visually verified by the assistant in-browser (Chrome extension was not connected). All UI verification so far has been served HTML and CSS, not rendered pixels.
 
 ---
