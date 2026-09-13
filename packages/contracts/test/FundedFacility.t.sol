@@ -257,8 +257,7 @@ contract FundedFacilityTest is VouchTestBase {
     // -----------------------------------------------------------------------
 
     function test_aBookkeepingFacilityQuotesTheSameRateAndMovesNothing() public {
-        VouchReceivablesFacility books =
-            new VouchReceivablesFacility(address(registry), address(passport), address(0));
+        VouchReceivablesFacility books = new VouchReceivablesFacility(address(registry), address(passport), address(0));
 
         assertFalse(books.fundedRail(), "no rail");
         assertEq(books.liquidity(), 0, "and therefore no liquidity");
@@ -274,8 +273,7 @@ contract FundedFacilityTest is VouchTestBase {
     }
 
     function test_fundingABookkeepingFacilityReverts() public {
-        VouchReceivablesFacility books =
-            new VouchReceivablesFacility(address(registry), address(passport), address(0));
+        VouchReceivablesFacility books = new VouchReceivablesFacility(address(registry), address(passport), address(0));
 
         vm.expectRevert(VouchReceivablesFacility.NoSettlementRail.selector);
         books.fund(1e6);

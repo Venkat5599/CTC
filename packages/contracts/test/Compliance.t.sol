@@ -106,9 +106,7 @@ contract ComplianceTest is VouchTestBase {
         assertEq(types.length, 3, "repayment, supply, kyc");
 
         vm.prank(ADMIN);
-        registry.registerSource(
-            FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1
-        );
+        registry.registerSource(FactTypes.GOVERNANCE_ACTIVITY, CHAIN_ETHEREUM, GOVERNOR, EventSignatures.VOTE_CAST, 1);
 
         assertEq(registry.registeredFactTypes().length, 4, "credit, liquidity, compliance, governance");
     }
