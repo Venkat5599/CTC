@@ -23,6 +23,10 @@
   <em>Verify once. Underwrite everywhere.</em>
 </p>
 
+<p align="center">
+  📄 <a href="docs/WHITEPAPER.md"><strong>Read the whitepaper</strong></a>
+</p>
+
 ---
 
 ## 📋 Project Overview
