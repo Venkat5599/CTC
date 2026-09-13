@@ -177,7 +177,7 @@ function MobileExpandable({
               {menus[menuKey].map((item) => (
                 <a
                   key={item.label}
-                  href="/passport"
+                  href={item.href}
                   className="text-foreground/80 hover:text-foreground block py-2 text-sm"
                   onClick={onClose}
                 >
@@ -257,18 +257,18 @@ export function Header(): ReactNode {
 
         <div className="flex items-center gap-4 max-[850px]:hidden">
           <a
-            href="/developers"
+            href="/dashboard"
             className="text-foreground/80 hover:text-foreground text-sm font-medium transition-colors"
           >
-            Sign in
+            Open app
           </a>
           <a
-            href="/passport"
+            href="/verify"
             className="group relative inline-flex items-center"
           >
             <span className="bg-accent absolute inset-y-0 right-0 w-[calc(100%-1.5rem)] rounded-xl" />
             <span className="bg-foreground text-background relative z-10 rounded-xl px-5 py-3 text-sm font-medium">
-              Try for free
+              Verify an address
             </span>
             <span className="relative -left-px z-10 flex h-10 w-10 items-center justify-center rounded-xl text-black">
               <ArrowDownRight className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
@@ -329,20 +329,20 @@ export function Header(): ReactNode {
 
               <div className="flex items-center justify-between pt-8 pb-2">
                 <a
-                  href="/developers"
+                  href="/dashboard"
                   className="text-foreground text-base font-medium"
                   onClick={closeMobile}
                 >
-                  Sign in
+                  Open app
                 </a>
                 <a
-                  href="/passport"
+                  href="/verify"
                   className="group relative inline-flex items-center"
                   onClick={closeMobile}
                 >
                   <span className="bg-accent absolute inset-y-0 right-0 w-[calc(100%-1.5rem)] rounded-2xl" />
                   <span className="bg-foreground text-background relative z-10 rounded-2xl px-5 py-3 text-sm font-medium">
-                    Try for free
+                    Verify an address
                   </span>
                   <span className="text-foreground relative -left-px z-10 flex h-10 w-10 items-center justify-center rounded-2xl">
                     <ArrowDownRight className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
