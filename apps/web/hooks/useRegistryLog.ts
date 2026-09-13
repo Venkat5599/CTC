@@ -39,9 +39,54 @@ export interface LedgerEntry {
  * CC3 rejects an unbounded `eth_getLogs`, and scanning from genesis on every
  * page load would be slow and rude regardless. The registry was deployed
  * recently, so a bounded window back from the head covers its whole life while
- * staying one cheap call.
+ * staying cheap.
+ *
+ * THE SCAN IS CHUNKED BECAUSE THE CEILING IS A TIME BUDGET, NOT A RANGE. CC3's
+ * public RPC kills a log query at ten seconds: 500,000 blocks -- the first value
+ * here -- returns `query timeout of 10 seconds exceeded`, and so does 100,000,
+ * which is why this page rendered "unavailable" while the registry held two
+ * facts it could have shown. Ten-thousand-block chunks, measured at 4-11s each
+ * against that ten-second budget, keep every individual request inside it and
+ * cover the registry's whole life -- deployed at block 5,429,984, head around
+ * 5,481,000 -- in six calls.
+ *
+ * THE SCAN IS ALL-OR-NOTHING ON PURPOSE. A chunk that fails throws, so the
+ * panels say "unavailable" rather than drawing a ledger that is missing whatever
+ * sat in the failed range. A partial ledger that looks complete is a worse lie
+ * than an empty one on a page whose entire job is to be checkable.
  */
-const LOOKBACK_BLOCKS = 500_000n;
+const CHUNK_BLOCKS = 10_000n;
+const LOOKBACK_BLOCKS = 60_000n;
+
+/**
+ * Every FactVerified log in the window, newest chunk first.
+ *
+ * Throws if any chunk fails, deliberately: the caller renders that as
+ * "unavailable" instead of a truncated ledger.
+ */
+async function scanLedger(registry: `0x${string}`, head: bigint): Promise<Log[]> {
+  const oldest = head > LOOKBACK_BLOCKS ? head - LOOKBACK_BLOCKS : 0n;
+  const logs: Log[] = [];
+
+  let toBlock = head;
+  while (toBlock > oldest) {
+    const fromBlock =
+      toBlock > oldest + CHUNK_BLOCKS - 1n ? toBlock - CHUNK_BLOCKS + 1n : oldest;
+
+    logs.push(
+      ...(await creditcoinClient.getLogs({
+        address: registry,
+        event: FACT_VERIFIED,
+        fromBlock,
+        toBlock,
+      })),
+    );
+
+    toBlock = fromBlock - 1n;
+  }
+
+  return logs;
+}
 
 export function useRegistryLog() {
   return useQuery<LedgerEntry[]>({
@@ -53,14 +98,7 @@ export function useRegistryLog() {
       if (!registry) return [];
 
       const head = await creditcoinClient.getBlockNumber();
-      const fromBlock = head > LOOKBACK_BLOCKS ? head - LOOKBACK_BLOCKS : 0n;
-
-      const logs = await creditcoinClient.getLogs({
-        address: registry,
-        event: FACT_VERIFIED,
-        fromBlock,
-        toBlock: head,
-      });
+      const logs = await scanLedger(registry, head);
 
       return logs
         .flatMap((log) => {
