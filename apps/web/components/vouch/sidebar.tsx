@@ -117,7 +117,7 @@ export function Sidebar() {
   const panel = (
     <div className="flex h-full flex-col px-3 py-5">
       <Link
-        href="/dashboard"
+        href="/"
         className="flex items-center gap-2.5 px-2.5 py-1 focus-visible:outline-2 focus-visible:outline-offset-4"
         style={{ outlineColor: "var(--vouch-primary)" }}
       >
@@ -249,7 +249,7 @@ export function Sidebar() {
           <List size={16} weight="regular" />
         </button>
 
-        <Link href="/dashboard" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2.5">
           <Mark />
           <span className="text-[15px] font-medium tracking-[-0.01em]">Vouch</span>
         </Link>
