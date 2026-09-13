@@ -26,18 +26,92 @@
  */
 
 import { useCallback, useState } from "react";
-import { parseAbi, type Hex } from "viem";
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  parseAbi,
+  UserRejectedRequestError,
+  type Hex,
+} from "viem";
 import { useAccount, useWriteContract } from "wagmi";
 
 import { creditcoinClient } from "@/lib/viem";
 import { addresses } from "@/lib/contracts";
+import { useTxHistory } from "@/hooks/useTxHistory";
 
 const REGISTRY_ABI = parseAbi([
+  // Every custom error the registry can throw is enumerated here so viem can
+  // decode a reverted simulation or receipt into something a user can act on
+  // (rather than "execution reverted" with an opaque selector).
+  "error FactAlreadyVerified()",
+  "error EmitterMismatch()",
+  "error TopicMismatch()",
+  "error ReceiptStatusFail()",
+  "error LogIndexOutOfRange()",
+  "error ChainKeyMismatch()",
+  "error ReserveAssetMismatch()",
+  "error DeadlineExpired()",
+  "error UnknownFactType()",
+  "error SourceNotRegistered()",
+  "error ContinuityInvalid()",
+  "error InclusionProofInvalid()",
   "function submitBatch((bytes32,bytes32[]) continuity, (uint64,uint64,bytes32,bytes32,uint32,bytes,bytes32,(bytes32,bool)[])[] claims) returns (uint256)",
   "function hasProof(address subject, bytes32 factType) view returns (bool)",
   "function proofCount(address subject, bytes32 factType) view returns (uint32)",
   "function totalProofs(address subject) view returns (uint32)",
 ]);
+
+/**
+ * Translate a viem error into a one-line, user-facing explanation.
+ *
+ * Priorities:
+ *  1. UserRejectedRequestError — the user closed the wallet prompt.
+ *  2. ContractFunctionRevertedError — the registry rejected the claim; the
+ *     custom error name is the exact failure and we surface it verbatim.
+ *  3. Anything else — the first line of the message, which viem writes in a
+ *     shape that reads as a sentence.
+ */
+function humaniseError(err: unknown): string {
+  if (err instanceof BaseError) {
+    if (err.walk((e) => e instanceof UserRejectedRequestError)) {
+      return "You rejected the request in your wallet. Nothing was sent.";
+    }
+    const reverted = err.walk(
+      (e) => e instanceof ContractFunctionRevertedError,
+    ) as ContractFunctionRevertedError | null;
+    if (reverted) {
+      const name = reverted.data?.errorName;
+      const friendly: Record<string, string> = {
+        FactAlreadyVerified:
+          "The registry has already recorded this log. Replay is blocked at the guard, so nothing was written.",
+        EmitterMismatch:
+          "The log did not come from the pinned emitter. S2 stopped a lookalike contract cold.",
+        TopicMismatch:
+          "The log's topic0 does not match the registered event signature.",
+        ReceiptStatusFail:
+          "The source transaction reverted on its own chain. S1 blocked the write.",
+        LogIndexOutOfRange:
+          "The receipt-scoped log index is out of range for that transaction.",
+        ChainKeyMismatch:
+          "The chainKey on the proof does not match the registered source.",
+        ReserveAssetMismatch:
+          "The Aave reserve asset on this repayment is not the one this deployment pins.",
+        DeadlineExpired:
+          "The Attestcoin proof deadline has passed. Regenerate the proof and retry.",
+        UnknownFactType: "This fact type is not registered on this deployment.",
+        SourceNotRegistered:
+          "No source has been registered for that chainKey and fact type.",
+        ContinuityInvalid:
+          "The continuity proof failed against the Block Prover precompile.",
+        InclusionProofInvalid:
+          "The Merkle inclusion proof failed against the receipts root.",
+      };
+      return name ? friendly[name] ?? `Registry reverted: ${name}` : err.shortMessage;
+    }
+    return err.shortMessage;
+  }
+  return err instanceof Error ? err.message.split("\n")[0] ?? String(err) : String(err);
+}
 
 export type StepState = "idle" | "running" | "done" | "failed";
 
@@ -89,6 +163,7 @@ function fresh(): DemoStep[] {
 export function useLiveDemo() {
   const { address, isConnected } = useAccount();
   const { writeContractAsync } = useWriteContract();
+  const history = useTxHistory(address);
 
   const [steps, setSteps] = useState<DemoStep[]>(fresh());
   const [source, setSource] = useState<SourceFact | null>(null);
@@ -230,31 +305,58 @@ export function useLiveDemo() {
           : "no facts on record"
       );
 
-      // 4. The write, from the user's own wallet.
+      // 4. Simulate first, so any revert surfaces with its custom error name
+      // BEFORE we ask the user to sign — a rejected simulation costs no gas and
+      // spares them a wallet prompt for a transaction the chain would have
+      // rejected anyway.
+      const submitArgs = [
+        args.continuity,
+        [
+          [
+            BigInt(args.claim[0]),
+            BigInt(args.claim[1]),
+            args.claim[2],
+            args.claim[3],
+            args.claim[4],
+            args.claim[5],
+            args.claim[6],
+            args.claim[7],
+          ],
+        ],
+      ] as never;
+
+      mark("submit", "running", "Simulating against the registry…");
+      try {
+        await creditcoinClient.simulateContract({
+          address: registry,
+          abi: REGISTRY_ABI,
+          functionName: "submitBatch",
+          args: submitArgs,
+          account: address as `0x${string}`,
+        });
+      } catch (simError) {
+        const message = humaniseError(simError);
+        mark("submit", "failed", message);
+        setError(message);
+        setRunning(false);
+        return;
+      }
+
       mark("submit", "running", "Confirm in your wallet…");
       const hash = await writeContractAsync({
         address: registry,
         abi: REGISTRY_ABI,
         functionName: "submitBatch",
-        args: [
-          args.continuity,
-          [
-            [
-              BigInt(args.claim[0]),
-              BigInt(args.claim[1]),
-              args.claim[2],
-              args.claim[3],
-              args.claim[4],
-              args.claim[5],
-              args.claim[6],
-              args.claim[7],
-            ],
-          ],
-        ] as never,
+        args: submitArgs,
       });
 
       setCreditcoinTx(hash);
       mark("submit", "done", hash);
+      history.append({
+        hash,
+        subject: src.subject,
+        factType,
+      });
 
       // 5. Confirmation. Every S1/S2/S3 check lives inside this call, so a
       // success here IS the verification result.
@@ -268,11 +370,17 @@ export function useLiveDemo() {
         setError(
           "The registry rejected this proof. That is the system working: one of the receipt-status, emitter, topic or replay checks failed."
         );
+        history.update(hash, { status: "reverted" });
         setRunning(false);
         return;
       }
 
       mark("confirm", "done", `gas ${receipt.gasUsed.toString()}`);
+      history.update(hash, {
+        status: "success",
+        gasUsed: receipt.gasUsed.toString(),
+        blockNumber: receipt.blockNumber.toString(),
+      });
 
       // 6. Standing after.
       mark("after", "running", "Reading Creditcoin…");
@@ -282,10 +390,7 @@ export function useLiveDemo() {
 
       setRunning(false);
     } catch (caught) {
-      const message =
-        caught instanceof Error
-          ? (caught.message.split("\n")[0] ?? "Failed")
-          : String(caught);
+      const message = humaniseError(caught);
       setError(message);
       setSteps((prev) =>
         prev.map((s) =>

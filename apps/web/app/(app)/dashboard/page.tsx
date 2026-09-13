@@ -17,6 +17,7 @@ import { PROVEN_DEMO_ADDRESS, ProvenAddressHint } from "@/components/vouch/consu
 import { useConsumers } from "@/hooks/useConsumers";
 import { useFacts } from "@/hooks/useFacts";
 import { usePassport } from "@/hooks/usePassport";
+import { useTxHistory } from "@/hooks/useTxHistory";
 import { useWallet } from "@/hooks/useWallet";
 import { addresses, explorerUrl, sourceExplorerUrl } from "@/lib/contracts";
 import { factById } from "@vouch/schemas";
@@ -54,6 +55,7 @@ const READ_GAS = "1,202";
 
 export default function DashboardPage() {
   const { address, canConnect, connect, isConnected, isConnecting } = useWallet();
+  const history = useTxHistory(address);
 
   const [subject, setSubject] = useState<string | null>(null);
   const active = subject ?? address ?? null;
@@ -275,6 +277,88 @@ export default function DashboardPage() {
           </div>
         </Section>
       </section>
+
+      {/* ---------------------------------------------------------------- */}
+      {/* Your submissions. Persisted per wallet, reconciled with chain.     */}
+      {/* ---------------------------------------------------------------- */}
+      {isConnected && history.records.length > 0 ? (
+        <section className="mb-8">
+          <Section
+            action={
+              <button
+                className="rounded-[var(--vouch-radius-sm)] border border-[var(--vouch-border)] bg-[var(--vouch-bg)] px-2.5 py-1 font-mono text-[11px] text-[var(--vouch-text-faint)] transition-colors hover:border-[var(--vouch-border-strong)] hover:text-[var(--vouch-text)]"
+                onClick={history.clear}
+                type="button"
+              >
+                Clear local history
+              </button>
+            }
+            description="Every submitBatch you sent from this wallet in this browser, reconciled against Creditcoin on load."
+            title="Your recent submissions"
+          >
+            <div className="overflow-x-auto px-6 py-4">
+              <table className="w-full min-w-[720px] text-left">
+                <thead>
+                  <tr>
+                    {["When", "Subject", "Status", "Block", "Gas", "CC3 tx"].map((h) => (
+                      <th
+                        className="px-3 py-2 font-mono text-[10px] font-semibold tracking-[0.12em] text-[var(--vouch-text-faint)] uppercase"
+                        key={h}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {history.records.map((r) => {
+                    const tone =
+                      r.status === "success"
+                        ? "text-[var(--vouch-primary)]"
+                        : r.status === "reverted"
+                          ? "text-[var(--vouch-danger)]"
+                          : "text-[var(--vouch-text-faint)]";
+                    return (
+                      <tr className="border-t border-[var(--vouch-border)]" key={r.hash}>
+                        <td className="px-3 py-2 font-mono text-[11px] text-[var(--vouch-text-muted)] tabular-nums">
+                          {new Date(r.submittedAt).toLocaleString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[11px] text-[var(--vouch-text)]">
+                          {r.subject.slice(0, 8)}…{r.subject.slice(-4)}
+                        </td>
+                        <td className={`px-3 py-2 font-mono text-[11px] font-semibold ${tone}`}>
+                          {r.status}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[11px] text-[var(--vouch-text-muted)] tabular-nums">
+                          {r.blockNumber ? `#${r.blockNumber}` : "—"}
+                        </td>
+                        <td className="px-3 py-2 font-mono text-[11px] text-[var(--vouch-text-muted)] tabular-nums">
+                          {r.gasUsed ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Link
+                            className="font-mono text-[11px] text-[var(--vouch-primary)] hover:underline"
+                            href={explorerUrl("tx", r.hash)}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            {r.hash.slice(0, 10)}…
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Section>
+        </section>
+      ) : null}
 
       {/* ---------------------------------------------------------------- */}
       {/* The pipeline. Real values where this address produced them.       */}
